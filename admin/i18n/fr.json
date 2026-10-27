@@ -1,7 +1,6 @@
 {
     "Connection": "Connexion",
     "IP address or hostname of the AVR": "Adresse IP ou nom d'hôte de l'AVR",
-    "Select a found device or enter the address manually. Search only works while the instance is running.": "Sélectionnez un appareil trouvé ou saisissez l'adresse manuellement. La recherche ne fonctionne que si l'instance est démarrée.",
     "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "L'AVR n'accepte qu'UNE seule connexion telnet. Déconnectez les autres applications (p. ex. Home Assistant) et réglez le contrôle réseau (contrôle IP) de l'AVR sur « Toujours actif ».",
     "Advanced settings": "Paramètres avancés",
     "Poll interval (ms)": "Intervalle d'interrogation (ms)",
@@ -9,5 +8,6 @@
     "Interval between commands (ms)": "Intervalle entre les commandes (ms)",
     "Minimum gap between two commands. The protocol requires at least 50 ms": "Écart minimal entre deux commandes. Le protocole exige au moins 50 ms",
     "Telnet port": "Port telnet",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 sur tous les AVR. À modifier uniquement avec une passerelle série-IP"
+    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 sur tous les AVR. À modifier uniquement avec une passerelle série-IP",
+    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Saisissez l'adresse ou choisissez un appareil trouvé sur le réseau. La recherche nécessite l'instance démarrée et ne trouve que les AVR du même sous-réseau."
 }

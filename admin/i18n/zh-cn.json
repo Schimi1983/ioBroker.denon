@@ -1,7 +1,6 @@
 {
     "Connection": "连接",
     "IP address or hostname of the AVR": "AVR 的 IP 地址或主机名",
-    "Select a found device or enter the address manually. Search only works while the instance is running.": "选择找到的设备或手动输入地址。仅在实例运行时才能搜索。",
     "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "AVR 只接受一个 telnet 连接。请断开其他应用（例如 Home Assistant），并将 AVR 的网络控制（IP 控制）设置为“始终开启”。",
     "Advanced settings": "高级设置",
     "Poll interval (ms)": "轮询间隔（毫秒）",
@@ -9,5 +8,6 @@
     "Interval between commands (ms)": "命令间隔（毫秒）",
     "Minimum gap between two commands. The protocol requires at least 50 ms": "两条命令之间的最小间隔。协议要求至少 50 毫秒",
     "Telnet port": "Telnet 端口",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "所有 AVR 均为 23。仅在使用串口转 IP 网桥时修改"
+    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "所有 AVR 均为 23。仅在使用串口转 IP 网桥时修改",
+    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "输入地址或选择在网络中找到的设备。搜索需要实例正在运行，并且只能找到同一子网中的 AVR。"
 }

@@ -9,17 +9,19 @@
             "newLine": true
         },
         "ip": {
-            "type": "selectSendTo",
+            "type": "autocompleteSendTo",
             "command": "browse",
-            "manual": true,
             "label": "IP address or hostname of the AVR",
-            "help": "Select a found device or enter the address manually. Search only works while the instance is running.",
+            "help": "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.",
             "newLine": true,
             "xs": 12,
             "sm": 12,
             "md": 6,
             "lg": 4,
-            "xl": 4
+            "xl": 4,
+            "freeSolo": true,
+            "noTranslation": true,
+            "maxLength": 253
         },
         "infoSingleConnection": {
             "type": "staticText",

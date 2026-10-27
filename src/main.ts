@@ -8,6 +8,9 @@ import { getZoneObjects } from './lib/states';
 
 type AvrType = 'US' | 'DE';
 
+/** A refused connection is reported as telnet conflict only if it lasts longer than this */
+const REFUSED_WARN_AFTER_MS = 30_000;
+
 class Denon extends utils.Adapter {
     /** Commands to send on initial connection */
     private readonly updateCommands = [
@@ -182,6 +185,8 @@ class Denon extends utils.Adapter {
     /** Cache of id|value pairs already present in common.states */
     private readonly knownStateValues = new Set<string>();
     private receiverType?: AvrType;
+    /** Timestamp of the first refused connection attempt in a row, 0 = none */
+    private refusedSince = 0;
 
     /**
      * @param options adapter options
@@ -202,6 +207,7 @@ class Denon extends utils.Adapter {
      */
     private attachClientHandlers(client: DenonTelnetClient): void {
         client.on('connected', () => {
+            this.refusedSince = 0;
             void this.setState('info.connection', true, true);
             this.log.info(`[CONNECT] Adapter connected to DENON/Marantz AVR: ${this.avrHost}`);
             if (!this.receiverType) {
@@ -225,12 +231,25 @@ class Denon extends utils.Adapter {
             // @KI_HINWEIS: The same error is only logged once as warning, repetitions go to debug (issues #149, #240)
             const level = repeated ? 'debug' : 'warn';
             switch (code) {
-                case 'ECONNREFUSED':
-                    this.log[level](
-                        'Connection refused. The AVR only accepts ONE telnet connection, make sure no other app ' +
-                            '(Home Assistant, Denon/Marantz app, other adapter) is connected to port 23',
-                    );
+                case 'ECONNREFUSED': {
+                    // @KI_HINWEIS: A booting AVR (e.g. after a power loss) refuses connections for a few seconds.
+                    // Only a refusal lasting longer than REFUSED_WARN_AFTER_MS hints at another telnet client.
+                    const now = Date.now();
+                    if (!this.refusedSince) {
+                        this.refusedSince = now;
+                        this.log.info('Connection refused, the AVR is probably not ready yet (booting). Retrying...');
+                    } else if (now - this.refusedSince >= REFUSED_WARN_AFTER_MS && this.refusedSince > 0) {
+                        this.log.warn(
+                            'Connection still refused. The AVR only accepts ONE telnet connection, make sure no other ' +
+                                'app (Home Assistant, Denon/Marantz app, other adapter) is connected to port 23',
+                        );
+                        // warn only once per refusal period
+                        this.refusedSince = -1;
+                    } else {
+                        this.log.debug('Connection refused, retrying');
+                    }
                     break;
+                }
                 case 'EHOSTUNREACH':
                 case 'ENETUNREACH':
                     this.log[level]('AVR unreachable, check the network config of your AVR');

@@ -28,6 +28,7 @@ var helper = __toESM(require("./lib/utils"));
 var states = __toESM(require("./lib/states"));
 var import_upnp = require("./lib/upnp");
 var import_states = require("./lib/states");
+const REFUSED_WARN_AFTER_MS = 3e4;
 class Denon extends utils.Adapter {
   /** Commands to send on initial connection */
   updateCommands = [
@@ -199,6 +200,8 @@ class Denon extends utils.Adapter {
   /** Cache of id|value pairs already present in common.states */
   knownStateValues = /* @__PURE__ */ new Set();
   receiverType;
+  /** Timestamp of the first refused connection attempt in a row, 0 = none */
+  refusedSince = 0;
   /**
    * @param options adapter options
    */
@@ -216,6 +219,7 @@ class Denon extends utils.Adapter {
    */
   attachClientHandlers(client) {
     client.on("connected", () => {
+      this.refusedSince = 0;
       void this.setState("info.connection", true, true);
       this.log.info(`[CONNECT] Adapter connected to DENON/Marantz AVR: ${this.avrHost}`);
       if (!this.receiverType) {
@@ -236,11 +240,21 @@ class Denon extends utils.Adapter {
       void this.setState("info.connection", false, true);
       const level = repeated ? "debug" : "warn";
       switch (code) {
-        case "ECONNREFUSED":
-          this.log[level](
-            "Connection refused. The AVR only accepts ONE telnet connection, make sure no other app (Home Assistant, Denon/Marantz app, other adapter) is connected to port 23"
-          );
+        case "ECONNREFUSED": {
+          const now = Date.now();
+          if (!this.refusedSince) {
+            this.refusedSince = now;
+            this.log.info("Connection refused, the AVR is probably not ready yet (booting). Retrying...");
+          } else if (now - this.refusedSince >= REFUSED_WARN_AFTER_MS && this.refusedSince > 0) {
+            this.log.warn(
+              "Connection still refused. The AVR only accepts ONE telnet connection, make sure no other app (Home Assistant, Denon/Marantz app, other adapter) is connected to port 23"
+            );
+            this.refusedSince = -1;
+          } else {
+            this.log.debug("Connection refused, retrying");
+          }
           break;
+        }
         case "EHOSTUNREACH":
         case "ENETUNREACH":
           this.log[level]("AVR unreachable, check the network config of your AVR");
