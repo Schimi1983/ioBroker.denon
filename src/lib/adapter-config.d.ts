@@ -12,6 +12,8 @@ declare global {
             pollInterval: number;
             /** Minimum gap between two commands in ms */
             requestInterval: number;
+            /** Identify brand, model and zones via HTTP (Deviceinfo.xml) at startup */
+            useHttpInfo: boolean;
         }
     }
 }

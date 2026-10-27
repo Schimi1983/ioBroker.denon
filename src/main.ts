@@ -1,6 +1,19 @@
 import * as utils from '@iobroker/adapter-core';
 import { DenonTelnetClient, type CommandPriority } from './lib/telnet';
 import * as protocol from './lib/protocol';
+import { type DeviceInfo, fetchDeviceInfo } from './lib/deviceinfo';
+import {
+    CURSOR_LINE_OBJECT,
+    DEVICE_INFO_STATES,
+    ENUM_SETTINGS,
+    ENUM_SETTINGS_BY_ID,
+    enumSettingObject,
+    findEnumSetting,
+    SIGNAL_INFO_QUERIES,
+    SIGNAL_INFO_STATES,
+    SOUND_MODE_BUTTONS,
+    soundModeButtonObjects,
+} from './lib/settings';
 import * as helper from './lib/utils';
 import * as states from './lib/states';
 import { ssdpScan } from './lib/upnp';
@@ -185,6 +198,12 @@ class Denon extends utils.Adapter {
     /** Cache of id|value pairs already present in common.states */
     private readonly knownStateValues = new Set<string>();
     private receiverType?: AvrType;
+    /** Result of the HTTP identification, undefined if disabled or not reachable */
+    private deviceInfo?: DeviceInfo;
+    /** Ids of objects already ensured in this run */
+    private readonly ensuredObjects = new Set<string>();
+    /** True once the AVR answered a signal info query, then these are polled too */
+    private signalInfoSupported = false;
     /** Timestamp of the first refused connection attempt in a row, 0 = none */
     private refusedSince = 0;
 
@@ -327,6 +346,9 @@ class Denon extends utils.Adapter {
                 clearInterval: handle => this.clearInterval(handle as ioBroker.Interval),
             },
         });
+        if (this.config.useHttpInfo !== false) {
+            await this.identifyDevice(host);
+        }
         this.attachClientHandlers(this.telnet);
         this.telnet.start();
     }
@@ -349,10 +371,80 @@ class Denon extends utils.Adapter {
     }
 
     /**
+     * Returns the commands of the initial update. Zones the AVR does not have (known from Deviceinfo.xml)
+     * and the quick select flavor of the other brand are skipped.
+     */
+    private getUpdateCommands(): string[] {
+        const zones = this.deviceInfo?.zones;
+        const flavor = this.quickSelectPrefix;
+        const cmds = [...this.updateCommands, ...ENUM_SETTINGS.map(setting => setting.query), ...SIGNAL_INFO_QUERIES];
+        return cmds.filter(cmd => {
+            const zone = /^Z(\d)/.exec(cmd);
+            if (zone && zones !== undefined && parseInt(zone[1], 10) > zones) {
+                return false;
+            }
+            if (flavor === 'QUICK' && /SMART/.test(cmd)) {
+                return false;
+            }
+            if (flavor === 'SMART' && /QUICK/.test(cmd)) {
+                return false;
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Identifies brand, model and zone count via HTTP (Deviceinfo.xml). Failures are not critical.
+     *
+     * @param host AVR address
+     */
+    private async identifyDevice(host: string): Promise<void> {
+        const info = await fetchDeviceInfo(host);
+        if (!info) {
+            this.log.info('[HTTP] Deviceinfo.xml not available, using telnet detection only');
+            return;
+        }
+        this.deviceInfo = info;
+        this.log.info(
+            `[HTTP] Identified ${info.brand} ${info.model} (zones: ${info.zones ?? '?'}, API ${info.commApiVersion ?? '?'}, port ${info.port})`,
+        );
+        if (info.brand === 'Denon') {
+            this.rememberQuickSelectFlavor('QUICK');
+        } else if (info.brand === 'Marantz') {
+            this.rememberQuickSelectFlavor('SMART');
+        }
+        for (const [id, obj] of Object.entries(DEVICE_INFO_STATES)) {
+            await this.ensureObject(id, obj);
+        }
+        await this.setState('info.model', info.model, true);
+        await this.setState('info.brand', info.brand, true);
+        if (info.zones !== undefined) {
+            await this.setState('info.zones', info.zones, true);
+        }
+    }
+
+    /**
+     * Creates or updates an object once per adapter run
+     *
+     * @param id object id
+     * @param obj object definition
+     */
+    private async ensureObject(id: string, obj: ioBroker.SettableObject): Promise<void> {
+        if (this.ensuredObjects.has(id)) {
+            return;
+        }
+        await this.extendObject(id, obj, { preserve: { common: ['name'] } });
+        this.ensuredObjects.add(id);
+    }
+
+    /**
      * Returns the commands for one poll cycle, only for zones which exist and the matching quick select flavor
      */
     private getPollCommands(): string[] {
         const cmds = [...this.basePollCommands];
+        if (this.signalInfoSupported) {
+            cmds.push(...SIGNAL_INFO_QUERIES);
+        }
         const quick = this.quickSelectPrefix ? [this.quickSelectPrefix] : (['QUICK', 'SMART'] as const);
         for (const q of quick) {
             cmds.push(`MS${q} ?`);
@@ -449,6 +541,21 @@ class Denon extends utils.Adapter {
 
         if (this.receiverType === 'US') {
             return this.handleUsStateChange(id, stateVal);
+        }
+
+        const enumSetting = ENUM_SETTINGS_BY_ID.get(id);
+        if (enumSetting) {
+            const obj = await this.getObjectAsync(id);
+            await this.sendKeyed(`${enumSetting.prefix}${enumSetting.separator}`, obj, stateVal, id);
+            return;
+        }
+
+        const soundModeButton = SOUND_MODE_BUTTONS[id];
+        if (soundModeButton) {
+            if (stateVal) {
+                await this.sendRequest(soundModeButton.command);
+            }
+            return;
         }
 
         const channelVolStartsWith = 'zoneMain.channelVolume';
@@ -862,6 +969,9 @@ class Denon extends utils.Adapter {
             }
             try {
                 await Promise.all(promises);
+                for (const [id, obj] of Object.entries(soundModeButtonObjects())) {
+                    await this.ensureObject(id, obj);
+                }
                 this.log.debug('[INFO] DE states created');
             } catch (e: any) {
                 this.log.error(`Could not create DE states: ${e.message}`);
@@ -1060,7 +1170,7 @@ class Denon extends utils.Adapter {
      * Update all states by sending the defined updateCommands
      */
     private async updateStates(): Promise<void> {
-        await this.sendRequests(this.updateCommands);
+        await this.sendRequests(this.getUpdateCommands());
     }
 
     /**
@@ -1476,6 +1586,10 @@ class Denon extends utils.Adapter {
                 await this.createDisplayAndHttp();
             }
             await this.setState(`display.displayContent${line.index}`, line.text, true);
+            if (line.attributes !== undefined && line.attributes & protocol.DISPLAY_ATTR_CURSOR) {
+                await this.ensureObject('display.cursorLine', CURSOR_LINE_OBJECT);
+                await this.setStateChangedAsync('display.cursorLine', line.index, true);
+            }
             return true;
         }
 
@@ -1531,9 +1645,33 @@ class Denon extends utils.Adapter {
             return true;
         }
 
-        // Signal info, Auto standby, ECO, DRC, input mode and video select events are not mapped to states yet
-        if (/^(SSINF|STBY|ECO|PSDRC|DC|SD|OPV|SY|TR)/.test(data)) {
-            this.log.debug(`[INFO] <== Not (yet) mapped: ${data}`);
+        // Signal information, e.g. "SSINFAISFSV 48K"
+        if (data.startsWith('SSINF')) {
+            const info = protocol.parseSignalInfo(data);
+            const target = info ? SIGNAL_INFO_STATES[info.key] : undefined;
+            if (info && target) {
+                this.signalInfoSupported = true;
+                await this.ensureObject(target.id, target.obj);
+                await this.setStateChangedAsync(target.id, info.value, true);
+            } else {
+                this.log.debug(`[INFO] <== Unknown signal info: ${data}`);
+            }
+            return true;
+        }
+
+        // Generic settings with a fixed value list (ECO, STBY, PSDRC, PSRSTR, SD, DC)
+        const enumMatch = findEnumSetting(data);
+        if (enumMatch) {
+            const { setting, value } = enumMatch;
+            await this.ensureObject(setting.id, enumSettingObject(setting));
+            await this.ensureAttrInStates(setting.id, value);
+            await this.setState(setting.id, value, true);
+            return true;
+        }
+
+        // Video select per source and other events without state
+        if (/^(OPV|SY|TR)/.test(data)) {
+            this.log.debug(`[INFO] <== Not mapped: ${data}`);
             return true;
         }
 

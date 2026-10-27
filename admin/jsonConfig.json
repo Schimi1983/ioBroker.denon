@@ -77,6 +77,17 @@
             "md": 6,
             "lg": 4,
             "xl": 4
+        },
+        "useHttpInfo": {
+            "type": "checkbox",
+            "label": "Identify device via HTTP",
+            "help": "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet",
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
         }
     }
 }

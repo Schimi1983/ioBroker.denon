@@ -1,11 +1,20 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.0",
+    "version": "2.0.0-alpha.1",
     "news": {
-      "2.0.0-alpha.0": {
-        "en": "Breaking: value lists of brightness, video processing mode and picture mode now use protocol codes\nnew telnet transport: line buffer, send queue, keepalive, reconnect with backoff\nfixed display lines, picture mode, video processing mode, channel volume SW2-4, unknown surround modes\nAdmin UI migrated to jsonConfig, Node.js >= 22, js-controller >= 6.0.11",
-        "de": "Breaking: Wertelisten von Helligkeit, Videoverarbeitung und Bildmodus nutzen jetzt die Protokoll-Codes\nneuer Telnet-Transport: Zeilenpuffer, Sende-Warteschlange, Keepalive, Reconnect mit Backoff\nDisplayzeilen, Bildmodus, Videoverarbeitung, Kanalpegel SW2-4 und unbekannte Surround-Modi korrigiert\nAdmin-Oberfläche auf jsonConfig umgestellt, Node.js >= 22, js-controller >= 6.0.11"
+      "2.0.0-alpha.1": {
+        "en": "Breaking: value lists of brightness, video processing mode and picture mode use protocol codes\nnew telnet transport with send queue, keepalive and reconnect with backoff\ndevice identification via HTTP (brand, model, zones)\nnew states: ECO, auto standby, DRC, restorer, input mode, signal info, sound mode buttons\nmany parser fixes, admin UI migrated to jsonConfig",
+        "de": "Breaking: Wertelisten von Helligkeit, Videoverarbeitung und Bildmodus nutzen Protokoll-Codes\nneuer Telnet-Transport mit Sende-Warteschlange, Keepalive und Reconnect mit Backoff\nGeräteerkennung per HTTP (Marke, Modell, Zonen)\nneue States: ECO, Auto-Standby, DRC, Restorer, Eingangsmodus, Signal-Info, Sound-Modus-Tasten\nviele Parser-Korrekturen, Admin-Oberfläche auf jsonConfig umgestellt",
+        "ru": "Критическое изменение: списки значений яркости, видеообработки и режима изображения используют коды протокола\nновый telnet-транспорт с очередью команд, keepalive и переподключением с задержкой\nопределение устройства по HTTP (марка, модель, зоны)\nновые состояния: ECO, автоожидание, DRC, реставратор, режим входа, информация о сигнале, кнопки режимов звука\nмного исправлений парсера, интерфейс администратора переведён на jsonConfig",
+        "pt": "Alteração incompatível: listas de valores de brilho, processamento de vídeo e modo de imagem usam códigos do protocolo\nnovo transporte telnet com fila de envio, keepalive e reconexão com backoff\nidentificação do dispositivo via HTTP (marca, modelo, zonas)\nnovos estados: ECO, espera automática, DRC, restaurador, modo de entrada, informação de sinal, botões de modo de som\nmuitas correções do analisador, interface de administração migrada para jsonConfig",
+        "nl": "Breaking: waardelijsten van helderheid, videoverwerking en beeldmodus gebruiken protocolcodes\nnieuw telnet-transport met verzendwachtrij, keepalive en herverbinden met backoff\napparaatherkenning via HTTP (merk, model, zones)\nnieuwe states: ECO, auto-standby, DRC, restorer, ingangsmodus, signaalinfo, geluidsmodusknoppen\nveel parsercorrecties, beheerinterface omgezet naar jsonConfig",
+        "fr": "Changement majeur : les listes de valeurs de luminosité, traitement vidéo et mode d'image utilisent les codes du protocole\nnouveau transport telnet avec file d'envoi, keepalive et reconnexion avec backoff\nidentification de l'appareil via HTTP (marque, modèle, zones)\nnouveaux états : ECO, veille automatique, DRC, restaurateur, mode d'entrée, informations de signal, boutons de mode sonore\nnombreuses corrections de l'analyseur, interface d'administration migrée vers jsonConfig",
+        "it": "Modifica incompatibile: gli elenchi di valori di luminosità, elaborazione video e modalità immagine usano i codici del protocollo\nnuovo trasporto telnet con coda di invio, keepalive e riconnessione con backoff\nidentificazione del dispositivo via HTTP (marca, modello, zone)\nnuovi stati: ECO, standby automatico, DRC, restorer, modalità ingresso, info segnale, pulsanti modalità audio\nmolte correzioni del parser, interfaccia di amministrazione migrata a jsonConfig",
+        "es": "Cambio incompatible: las listas de valores de brillo, procesamiento de vídeo y modo de imagen usan códigos del protocolo\nnuevo transporte telnet con cola de envío, keepalive y reconexión con backoff\nidentificación del dispositivo por HTTP (marca, modelo, zonas)\nnuevos estados: ECO, espera automática, DRC, restaurador, modo de entrada, información de señal, botones de modo de sonido\nmuchas correcciones del analizador, interfaz de administración migrada a jsonConfig",
+        "pl": "Zmiana niekompatybilna: listy wartości jasności, przetwarzania wideo i trybu obrazu używają kodów protokołu\nnowy transport telnet z kolejką poleceń, keepalive i ponownym łączeniem z opóźnieniem\nrozpoznawanie urządzenia przez HTTP (marka, model, strefy)\nnowe stany: ECO, automatyczne czuwanie, DRC, restorer, tryb wejścia, informacje o sygnale, przyciski trybów dźwięku\nwiele poprawek parsera, interfejs administracyjny przeniesiony na jsonConfig",
+        "uk": "Несумісна зміна: списки значень яскравості, обробки відео та режиму зображення використовують коди протоколу\nновий telnet-транспорт із чергою команд, keepalive та перепідключенням із затримкою\nвизначення пристрою через HTTP (марка, модель, зони)\nнові стани: ECO, автоочікування, DRC, реставратор, режим входу, інформація про сигнал, кнопки режимів звуку\nбагато виправлень парсера, інтерфейс адміністратора переведено на jsonConfig",
+        "zh-cn": "不兼容更改：亮度、视频处理和画面模式的值列表改用协议代码\n新的 telnet 传输，带发送队列、保活和退避重连\n通过 HTTP 识别设备（品牌、型号、区域）\n新状态：ECO、自动待机、DRC、音频修复、输入模式、信号信息、声音模式按钮\n大量解析器修复，管理界面迁移到 jsonConfig"
       },
       "1.15.12": {
         "en": "updated dependencies\nadded tier and license information\nfixed invalid object `denon.0`",
@@ -122,7 +131,8 @@
     "ip": "",
     "telnetPort": 23,
     "pollInterval": 7000,
-    "requestInterval": 100
+    "requestInterval": 100,
+    "useHttpInfo": true
   },
   "objects": [],
   "instanceObjects": [

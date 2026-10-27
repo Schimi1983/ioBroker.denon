@@ -58,23 +58,33 @@ Nach Abschluss der Installation einer Adapterinstanz öffnet sich automatisch ei
 
 ## Konfiguration
 
-### Fenster "Haupteinstellungen"
-![Adapter Configuration](media/fillInIp.png "Haupteinstellungen")<span style="color:grey">*Admin Oberfläche*</span>
-
-| Feld         | Beschreibung |                                                                       
+| Feld         | Beschreibung |
 |:-------------|:-------------|
-|IP Adresse    |Hier soll die IP-Adresse des gewünschten AV-Receivers eingegeben werden. Alternativ können Geräte im Netzwerk durch Klick auf die Lupe gesucht und anschließend im Dropdown Menü selektiert werden.|
+|IP-Adresse oder Hostname|IPv4-, IPv6-Adresse oder Hostname des AV-Receivers. Solange die Instanz läuft, werden per UPnP/SSDP gefundene Geräte als Vorschlag angeboten. Die Suche findet nur Geräte im selben Subnetz wie ioBroker.|
+|Abfrageintervall|Intervall für Werte, die der AVR nicht selbst meldet (Display, Sleep-Timer, Quick Select, Signal-Info).|
+|Abstand zwischen Befehlen|Minimaler Abstand zwischen zwei Befehlen. Das Protokoll verlangt mindestens 50 ms, der Standardwert von 100 ms passt für die meisten Geräte.|
+|Telnet-Port|23 bei allen AVRs. Nur ändern, wenn eine Seriell-zu-IP-Bridge genutzt wird.|
+|Gerät per HTTP erkennen|Liest beim Start einmal `Deviceinfo.xml` (Marke Denon/Marantz, Modell, Anzahl Zonen). Gesteuert wird immer per Telnet.|
 
-### Fenster "Erweiterte Einstellungen"
-![Advanced Settings](media/advancedSettings.png "Erweiterte Einstellungen")<span style="color:grey">*Admin Oberfläche*</span>
+Nach Abschluss der Konfiguration wird der Konfigurationsdialog mit `SPEICHERN UND SCHLIEßEN` verlassen.
+Dadurch erfolgt im Anschluss ein Neustart des Adapters.
 
-| Feld         | Beschreibung |                                                                       
-|:-------------|:-------------|
-|Abrufintervall|Hiermit kann festgelegt werden, wie oft der Adapter manche Objekte aktualisiert. Die meisten Objekte werden bei einer Änderung automatisch aktualisiert. Der voreingestellte Wert hat sich als geeignet erwiesen.|
-|Intervall zwischen Befehlen|Hier kann festgelegt werden, wie lange der Adapter zwischen Befehlen wartet. Sollte ein älterer AV-Receiver genutzt werden und Probleme mit dem Adapter auftreten, kann es sinnvoll sein, diesen Wert zu erhöhen (z. B. auf 200 ms).|
+### Update von 1.x auf 2.0
+Version 2.0.0 stellt die Wertelisten einiger States auf die Protokoll-Codes um. Skripte und Visualisierungen, die diese Werte nutzen, müssen angepasst werden:
 
-Nach Abschluss der Konfiguration wird der Konfigurationsdialog mit `SPEICHERN UND SCHLIEßEN` verlassen. 
-Dadurch efolgt im Anschluß ein Neustart des Adapters.
+| State | alter Wert | neuer Wert |
+|---|---|---|
+| `display.brightness` | `Off`, `Dark`, `Dimmed`, `Bright` | `OFF`, `DAR`, `DIM`, `BRI` |
+| `settings.videoProcessingMode` | `AUTO`, `GAME`, `MOVIE` (gemeldet z. B. als `MAUTO`) | `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `settings.pictureMode` | wurde bisher nie gefüllt | `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+
+Das Schreiben des Anzeigenamens (z. B. `Bright` oder `Movie`) funktioniert weiterhin. Eingänge, Surround-Modi, MultEQ und Dynamic Volume behalten ihre Werte,
+nur die Wertelisten nutzen jetzt den Wert als Schlüssel. Vom AVR gemeldete Surround-Modi und Eingänge, die in der Liste fehlen, werden automatisch ergänzt.
+
+### Verbindung
+Der AVR akzeptiert nur EINE Telnet-Verbindung. Ist z. B. Home Assistant, die Denon/Marantz-App oder ein Skript verbunden, lehnt der AVR die Verbindung des Adapters ab.
+Eine Ablehnung wird erst als Warnung gemeldet, wenn sie länger als 30 Sekunden anhält (ein hochfahrender AVR lehnt ebenfalls einige Sekunden ab).
+Der Adapter verbindet sich selbst neu (1 s, 2 s, 4 s ... bis 60 s). Skripte, die die Instanz bei Verbindungsverlust neu starten, werden nicht mehr benötigt.
 
 ## Instanzen
 Die Installation des Adapters hat im Bereich `Instanzen` eine aktive Instanz des DENON Adapters angelegt.

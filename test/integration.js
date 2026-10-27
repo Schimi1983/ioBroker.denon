@@ -26,6 +26,14 @@ const RESPONSES = {
     'Z2SLP?': ['Z2SLPOFF'],
     'STBY?': ['STBY30M'],
     'ECO?': ['ECOAUTO'],
+    'PSDRC ?': ['PSDRC OFF'],
+    'PSRSTR ?': ['PSRSTR OFF'],
+    'SD?': ['SDNO'],
+    'DC?': ['DCAUTO'],
+    'SSINFAISSIG ?': ['SSINFAISSIG 02'],
+    'SSINFAISFSV ?': ['SSINFAISFSV 48K'],
+    'SSINFSIGRES ?': ['SSINFSIGRES 009'],
+    MSMOVIE: ['MSDOLBY SURROUND'],
     NSE: [
         `NSE0Online Music${' '.repeat(84)}`,
         `NSE1\nFavorites${' '.repeat(86)}`,
@@ -89,7 +97,14 @@ tests.integration(path.join(__dirname, '..'), {
                 avr = await startFakeAvr();
                 harness = getHarness();
                 await harness.changeAdapterConfig('denon', {
-                    native: { ip: '127.0.0.1', pollInterval: 2_000, requestInterval: 50, telnetPort: avr.port },
+                    native: {
+                        ip: '127.0.0.1',
+                        pollInterval: 2_000,
+                        requestInterval: 50,
+                        telnetPort: avr.port,
+                        // no HTTP server in the test environment
+                        useHttpInfo: false,
+                    },
                 });
                 await harness.startAdapterAndWait();
                 // initial update sends ~150 queries with 50 ms pacing
@@ -155,6 +170,37 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(polled).to.not.include('MSSMART ?');
                 expect(polled).to.not.include('Z3SLP?');
             }).timeout(15_000);
+
+            it('creates settings with fixed value lists only after the AVR answered', async () => {
+                expect(await val('settings.autoStandby')).to.equal('30M');
+                expect(await val('settings.ecoMode')).to.equal('AUTO');
+                expect(await val('settings.dynamicCompression')).to.equal('OFF');
+                expect(await val('settings.audioRestorer')).to.equal('OFF');
+                expect(await val('settings.inputMode')).to.equal('NO');
+                expect(await val('settings.digitalInputMode')).to.equal('AUTO');
+            }).timeout(10_000);
+
+            it('stores signal information and the display cursor line', async () => {
+                expect(await val('info.audioSignalCode')).to.equal('02');
+                expect(await val('info.audioSampleRate')).to.equal('48K');
+                expect(await val('info.videoResolutionCode')).to.equal('009');
+                expect(await val('display.cursorLine')).to.equal(1);
+            }).timeout(10_000);
+
+            it('sends settings and sound mode group buttons', async () => {
+                const before = avr.received.length;
+                await harness.states.setStateAsync('denon.0.settings.ecoMode', 'Off');
+                await harness.states.setStateAsync('denon.0.settings.autoStandby', '60M');
+                await harness.states.setStateAsync('denon.0.settings.dynamicCompression', 'AUTO');
+                await harness.states.setStateAsync('denon.0.settings.soundModeMovie', true);
+                await wait(1_500);
+                const sent = avr.received.slice(before);
+                expect(sent).to.include('ECOOFF');
+                expect(sent).to.include('STBY60M');
+                expect(sent).to.include('PSDRC AUTO');
+                expect(sent).to.include('MSMOVIE');
+                expect(await val('settings.surroundMode')).to.equal('DOLBY SURROUND');
+            }).timeout(10_000);
 
             it('sends user commands with protocol formatting', async () => {
                 const before = avr.received.length;

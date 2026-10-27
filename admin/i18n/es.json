@@ -9,5 +9,7 @@
     "Minimum gap between two commands. The protocol requires at least 50 ms": "Separación mínima entre dos comandos. El protocolo exige al menos 50 ms",
     "Telnet port": "Puerto telnet",
     "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 en todos los AVR. Cámbielo solo si usa un puente serie-IP",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Introduzca la dirección o elija un dispositivo encontrado en la red. La búsqueda requiere la instancia en ejecución y solo encuentra AVR en la misma subred."
+    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Introduzca la dirección o elija un dispositivo encontrado en la red. La búsqueda requiere la instancia en ejecución y solo encuentra AVR en la misma subred.",
+    "Identify device via HTTP": "Identificar el dispositivo por HTTP",
+    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Lee Deviceinfo.xml una vez al iniciar (marca, modelo, número de zonas). El control siempre usa telnet"
 }

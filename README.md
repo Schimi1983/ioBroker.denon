@@ -14,38 +14,34 @@ The developers of this module are in no way endorsed by or affiliated with D&M H
 or any associated subsidiaries, logos or trademarks.
 
 ## Installation
-You can either install the adapter via the ioBroker web interface or on your local machine via npm.
-
-### Browser-based
-1. Open your ioBroker web interface in a browser (eg: 192.168.30.70:8081)
-2. Click on Tab "Adapters"
-3. Type "Denon" in the Filter
-4. Click on the three points and then on the "+" symbol of the DENON AVR adapter
+Install the adapter via the ioBroker admin interface: open the tab "Adapters", search for "denon" and click on "+".
 ![Add Adapter](/docs/en/media/plusAddAdapter.png)
-
-### Local machine
-Navigate into your iobroker folder and execute the following command: 
-```bash
-npm i iobroker.denon
-```
 
 ## Setup
-Additional to the adapter installation you have to make sure that your AVR is correctly configured.
+Additional to the adapter installation you have to make sure that your AVR is correctly configured (see below).
 
-### ioBroker 
-1. Open your ioBroker interface in a browser (eg: 192.168.1.33:8081)
-2. Navigate to Tab "Adapters"
-3. Click on the three points and then on the "+" symbol of the DENON AVR adapter
-![Add Adapter](/docs/en/media/plusAddAdapter.png)
-4. Now you can see the adapter configuration page --> type in the ip-address of your DENON AVR or click on the search 
-icon to find AVRs in your network (via UPnP)
-![Adapter Configuration](/docs/en/media/fillInIp.png)
-5. If you also want to adjust the request/poll interval, make sure to click on the "Advanced Settings" Tab. 
-By decreasing the Poll Interval the adapter will decrease the time between updating the display contents. 
-By decreasing the request interval the time between sending commands will be decreased. 
-The default settings should fit well for the most users.
-![Advanced Settings](/docs/en/media/advancedSettings.png) 
-6. Click on Save & Close
+### ioBroker
+1. Open the instance settings of the adapter
+2. Enter the IP address (IPv4 or IPv6) or the hostname of your AVR. While the instance is running, AVRs found in the
+   network via UPnP/SSDP are offered as suggestions. The search only finds devices in the same subnet as ioBroker.
+3. Optional settings:
+    * **Poll interval:** interval for states the AVR does not push by itself (display, sleep timer, quick select, signal information)
+    * **Interval between commands:** minimum gap between two commands. The protocol requires at least 50 ms, the default of 100 ms fits most users
+    * **Telnet port:** 23 on all AVRs, only change it behind a serial-to-IP bridge
+    * **Identify device via HTTP:** reads `Deviceinfo.xml` once at startup to detect brand (Denon/Marantz), model and number of zones. Control and all state updates always use telnet
+4. Save and close
+
+### Upgrading from 1.x
+Version 2.0.0 changes the value lists of some states to the protocol codes. Adapt scripts and visualizations which use these values:
+
+| State | old value | new value |
+|---|---|---|
+| `display.brightness` | `Off`, `Dark`, `Dimmed`, `Bright` | `OFF`, `DAR`, `DIM`, `BRI` |
+| `settings.videoProcessingMode` | `AUTO`, `GAME`, `MOVIE` (reported as e.g. `MAUTO`) | `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `settings.pictureMode` | never filled before | `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+
+Writing the label (e.g. `Bright` or `Movie`) is still accepted. Inputs, surround modes, MultEQ and dynamic volume keep their values,
+only the value lists now use the value as key. Surround modes and inputs reported by the AVR which are missing in the list are added automatically.
 
 ### Network Setup of AV Receiver
 
@@ -72,11 +68,32 @@ The default settings should fit well for the most users.
 6. Set this parameter to "Always On".
 
 ## Usage
-Take note, that the AVRs can only manage a single telnet connection. If you are having an active telnet connection e. g. with the javascript adapter, the AVR will refuse the connection of this adapter.
+Take note, that the AVRs can only manage a single telnet connection. If you are having an active telnet connection e. g. with Home Assistant, the Denon/Marantz app or the javascript adapter, the AVR will refuse the connection of this adapter.
+A refused connection is reported as warning if it lasts longer than 30 seconds (a booting AVR also refuses connections for a few seconds).
+
+The adapter reconnects automatically (1 s, 2 s, 4 s ... up to 60 s). If the AVR does not send anything for 30 seconds, a keepalive query is sent; without an answer the connection is re-established.
+Scripts which restart the instance on connection loss are not needed anymore.
 Here you can find a description of the states and how to use them.
 
 ### Buttons
 The adapter creates the following buttons:
+
+* info.model / info.brand / info.zones
+
+    |Data type|Permission|
+    |:---:|:---:|
+    |string / string / number|R|
+
+   *Only filled if "Identify device via HTTP" is active and the AVR serves `Deviceinfo.xml`. Brand is `Denon` or `Marantz`, zones include the main zone.*
+
+* info.audioSignalCode / info.audioSampleRate / info.videoResolutionCode
+
+    |Data type|Permission|
+    |:---:|:---:|
+    |string|R|
+
+   *Signal information of the current input (models from 2015, created once the AVR answers). The codes are model specific,
+   on an AVR-X2200W `audioSignalCode` 02 = PCM, 05 = Dolby TrueHD, 06 = DTS, 09 = DTS-HD; `audioSampleRate` e.g. `48K`.*
 
 #### Channel: zoneMain / zone2 / zone3
 
@@ -422,28 +439,55 @@ Following states will be created by the adapter:
    
    *DISPLAY CONTENT IS NOT SUPPORTED FOR HEOS AVR'S*
    
+* display.cursorLine
+
+    |Data type|Permission|
+    |:---:|:---:|
+    |number|R|
+
+   *Line (1-7) of the display content which carries the cursor of the network menu. Created with the first cursor line.*
+
 * display.brightness
 
-    |Data type|Permission|                                                                       
+    |Data type|Permission|
     |:---:|:---:|
     |string|R/W|
 
-   *String value which represents the display brightness. The value can also set the display brightness by the following encoding:*
-   
-   *0: Off --> turns display off*
-   
-   *1: Dark --> turns display dark*
-   
-   *2: Dimmed --> turns display dimmed*
-   
-   *3: Bright --> turns display bright*
-   
+   *Display brightness as protocol code: `OFF`, `DAR` (dark), `DIM` (dimmed), `BRI` (bright). Writing the label (e.g. `Bright`) works too.*
+
    *Example:*
-   
+
    ```javascript
-   setState('denon.0.display.brightness', '3'); // Sets display brightness to "Bright"
+   setState('denon.0.display.brightness', 'BRI'); // Sets display brightness to "Bright"
    ```
+
 #### Channel: settings
+
+* settings.ecoMode / settings.autoStandby / settings.dynamicCompression / settings.audioRestorer / settings.inputMode / settings.digitalInputMode
+
+    |Data type|Permission|
+    |:---:|:---:|
+    |string|R/W|
+
+   *Created once the AVR answers the related query, so models without the feature get no state. Values are protocol codes:*
+
+   |State|Command|Values|
+   |---|---|---|
+   |`ecoMode`|`ECO`|`ON`, `AUTO`, `OFF`|
+   |`autoStandby`|`STBY`|`15M`, `30M`, `60M`, `OFF`|
+   |`dynamicCompression`|`PSDRC`|`AUTO`, `LOW`, `MID`, `HI`, `OFF`|
+   |`audioRestorer`|`PSRSTR`|`OFF`, `LOW`, `MED`, `HI`|
+   |`inputMode`|`SD`|`AUTO`, `HDMI`, `DIGITAL`, `ANALOG`, `EXT.IN`, `7.1IN`, `ARC`, `NO` (read only: no input)|
+   |`digitalInputMode`|`DC`|`AUTO`, `PCM`, `DTS`|
+
+* settings.soundModeMovie / Music / Game / Direct / PureDirect / Stereo / Auto
+
+    |Data type|Permission|
+    |:---:|:---:|
+    |boolean|W|
+
+   *Buttons to select a surround mode group. The AVR picks the best mode of the group for the current signal, the result is reported in `settings.surroundMode`.*
+
 
 * settings.powerSystem
 
@@ -914,8 +958,12 @@ The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
 * (Schimi1983) new telnet transport: line buffer (CR only), prioritized send queue with protocol pacing (>= 50 ms, 1 s after power on), keepalive and reconnect with backoff
 * (Schimi1983) fixed display lines (control characters, cursor line was cut), picture mode (#317), video processing mode, channel volumes SW2-SW4, CVEND, sleep timer formatting
 * (Schimi1983) zones and quick/smart select flavor (Denon/Marantz) are only polled if present
-* (Schimi1983) refused connections (telnet in use by another app) are logged once (#240)
+* (Schimi1983) connection errors are logged once, a refused connection (telnet in use by another app) is reported as warning only after 30 s (#240)
+* (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported), queries for missing zones are skipped
+* (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the AVR answers
+* (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.17)
+
 ### 1.15.12 (2024-07-23)
 * (foxriver76) updated dependencies
 * (foxriver76) added tier and license information
@@ -933,297 +981,12 @@ The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
 ### 1.15.2 (2023-06-12)
 * (foxriver76) fixed crash case with controller v5
 
-### 1.15.1 (2023-06-09)
-* (foxriver76) fix `displayContent` showing old information (closes #318)
-
-### 1.15.0 (2023-02-20)
-* (foxriver76) implemented missing channel volumes for main zone (closes #307)
-
-### 1.14.0 (2023-02-03)
-* (foxriver76) typescript port
-* (foxriver76) fixed issues with decoding of input state
-
-### 1.13.4 (2022-04-11)
-* (foxriver76) we now respect `requestInterval` on determining the AVR model too
-
-### 1.13.3 (2022-03-25)
-* (foxriver76) fixed timeout beeing only applied on first reconnect (fixes #232)
-
-### 1.13.2 (2022-03-23)
-* (foxriver76) fixed requesting interval
-
-### 1.13.1 (2022-03-19)
-* (foxriver76) added `settings.speakerPreset`
-
-### 1.12.1 (2022-01-03)
-* (foxriver76) fixed missing digits in `tuner.stationName`
-
-### 1.12.0 (2022-01-02)
-* (foxriver76) we introduce tuner states
-* (foxriver76) performance optimizations
-
-### 1.11.2 (2021-08-08)
-* (foxriver76) we fixed missing conversion to db on equalizer treble state for additional zones (fixes #162)
-
-### 1.11.1 (2021-06-29)
-* (foxriver76) fixes for silent reconnection - if ETIMEDOUT occurs repeatedly switch to debug, like for other errors (closes #149)
-
-### 1.11.0 (2021-06-06)
-* (foxriver76) implemented dialog level adjustment for DTS content (closes #143)
-* (foxriver76) new datapoints are `settings.dialogLevelAdjust`, `settings.dialogLevel`, `settings.dialogControl`
-
-### 1.10.7 (2021-05-12)
-* (foxriver76) fix missing conversion to db on equalizer states for additional zones (fixes #137)
-
-### 1.10.6 (2021-05-03)
-* (foxriver76) we fixed some more types
-
-### 1.10.5 (2021-05-02)
-* (foxriver76) we fixed some datapoints having wrong types or wrong state values set (fixes #130)
-
-### 1.10.4 (2021-02-20)
-* (foxriver76) if an older model (e.g. AVR 3808) just sends `NSE`, we do not set displayContent state anymore (fixes #112)
-
-### 1.10.3 (2021-01-28)
-* (foxriver76) don't poll whole online presets after change, it is unnecessary load
-
-### 1.10.2 (2021-01-28)
-* (foxriver76) return after detecting NSH command
-* (foxriver76) use release script
-
-### 1.10.0 (2021-01-17)
-* (foxriver76) auto-detect selectInput of all zones
-
-### 1.9.4 (2021-01-03)
-* (foxriver76) added missing rear height speaker states
-* (foxriver76) revert the last added options because they are not working as intended
-* (foxriver76) no longer remove digits and spaces from surroundMode response
-
-### 1.9.2 (2021-01-03)
-* (foxriver76) added some missing options for surroundMode
-
-### 1.9.1 (2020-12-03)
-* (foxriver76) prevent writing in destroyed socket on adapter unload
-* (foxriver76) add subwoofer states for main zone
-* (foxriver76) internal optimizations
-
-### 1.8.1 (2020-11-29)
-* (foxriver76) added states for atmos speakers `channelVolumeSurroundDolbyRight/Left` and `channelVolumeFrontDolbyLeft/Right`
-* (foxriver76) fixed bug with setting channelVolume of other zones than main
-* (foxriver76) added states `channelVolumeFrontHeightRight/Left` and `channelVolumeSurroundHeightLeft/Right`
-
-### 1.7.7 (2020-04-28)
-* (foxriver76) fixed timing issue which could lead to state creation procedure triggered more than once
-
-### 1.7.5 (2020-04-21)
-* (foxriver76) better error handling
-
-### 1.7.4 (2020-04-01)
-* (foxriver76) fix potential timeout issues
-
-### 1.7.2 (2020-01-08)
-* (foxriver76) another fix for DENON Picool to keep connection alive when turned off
-
-### 1.7.1 (2019-11-19)
-* (foxriver76) added ability to read desired data by expertReading states
-
-### 1.6.1 (2019-10-08)
-* (foxriver76) fixed bug with selectInput for zone2 and 3
-
-### 1.6.0
-* (foxriver76) added new state settings.lfeAmount
-
-### 1.5.1
-* (foxriver76) fix to detect DENON Ceol
-
-### 1.5.0
-* (foxriver76) added channel volumes for zone2 + 3
-* (foxriver76) other optimizations
-* (foxriver76) support of DENON POA-3012CI and similar AVRs
-* (foxriver76) create db volumes everytime
-
-### 1.3.2
-* (foxriver76) compact mode compatibility added
-
-### 1.2.7
-* (foxriver76) make sure states are never set before creation
-* (foxriver76) minor fixes and improvements
-
-### 1.2.6
-* (foxriver76) only updating sleep timer and quick select on change
-* (foxriver76) using promises wherever possible
-* (foxriver76) minor improvements
-
-### 1.2.4
-* (foxriver76) fix verbose logging on network issues
-* (foxriver76) as long as connection error stays the same, logging happens on debug
-
-### 1.2.3
-* (foxriver76) add missing usb to selectInput for all zones
-
-### 1.2.2
-* (foxriver76) use adapter core
-
-### 1.2.1
-* (foxriver76) info.onlinePresets converted to JSON array to work properly with widgets
-
-### 1.2.0
-* (foxriver76) added info.onlinePresets which is a JSON string containing all presets
-* (foxriver76) settings.savePreset and loadPreset to save and load presets according to the info.onlinePresets
-
-### 1.1.0
-* (foxriver76) added Bluetooth as select input (BT)
-
-### 1.0.0
-* (foxriver76) formal version increment
-
-### 0.6.0
-* (foxriver76) fix that enables Marantz receiver to use the quickSelect functionality
-* (foxriver76) quick select is now acknoledged
-* (foxriver76) remove old quick select buttons
-
-### 0.5.0
-* (foxriver76) added possibility to control channelVolume per speaker for Main Zone
-* (foxriver76) new states added to readme and documentation
-
-### 0.4.4
-* (foxriver76) fix bug where picture mode command was sent as undefined
-
-### 0.4.3
-* (foxriver76) fallback for advanced settings
-* (foxriver76) fix double reconnection when AVR closes the socket
-* (foxriver76) fix a problem where callback for pictureMode is called to early
-
-### 0.4.2
-* (foxriver76) pictureMode role fixed
-
-### 0.4.1
-* (foxriver76) added picture mode direct change
-
-### 0.3.9
-* (foxriver76) only create containment amount, audyssey lfc, subwoofer two level if supproted
-* (foxriver76) readme updated
-
-### 0.3.8
-* (foxriver76) add state to control center spread
-* (foxriver76) readme updated
-* (foxriver76) addded video processing mode control
-* (foxriver76) optimizations and minor fixes
-
-### 0.3.7
-* (foxriver76) minor code optimization
-* (foxriver76) fixes on readme
-* (foxriver76) logging undhandled commands on debug
-
-### 0.3.6
-* (foxriver76) fixed displayState non-readable chars for old AVRs
-* (foxriver76) fixes on readme
-* (foxriver76) capital chars in mainZone volumeUp/down names, are now lowercase
-
-### 0.3.5
-* (foxriver76) removed isPlaying state, because not working properly
-* (foxriver76) update readme
-
-### 0.3.4
-* (foxriver76) fix that HEOS does not create http and display content related states
-
-### 0.3.3
-* (foxriver76) added state for setup button
-* (foxriver76) added cursors and remote control buttons
-* (foxriver76) readme update
-
-### 0.3.2
-* (foxriver76) Added isPlaying state for non-HEOS AVR's, thanks to bluefox
-* (foxriver76) Added link to cover for non-HEOS AVR's
-* (foxriver76) displayContent, isPlaying, coverURL will only be generated for non-HEOS
-* (foxriver76) Updated readme
-
-### 0.3.1
-* (foxriver76) Added placeholder ip in config gui
-* (foxriver76) fixed volume in db for main zone
-
-### 0.3.0
-* (bluefox & foxriver76) Names and roles were refactored
-* (bluefox) Discovery added
-* (foxriver76) Update Readme
-* (foxriver76) Implemented separate Play & Pause button
-* (bluefox & foxriver76) Internal improvements
-
-### 0.2.4
-* (foxriver76) prevent adapter from doing more than one reconnect attempt at the same time
-* (foxriver76) improved stability
-* (foxriver76) update readme
-
-### 0.2.3
-* (foxriver76) added possibility to handle states in dB additional
-* (foxriver76) minor changes
-
-### 0.2.2
-* (foxriver76) removed unneeded files
-* (foxriver76) state lists are now of type string due to better compatibility
-* (foxriver76) optimized matching for state lists
-* (foxriver76) some state lists can be set by the value additionaly to the key
-
-### 0.2.1
-* (foxriver76) small bug fixes on connection error handling
-* (foxriver76) improvements on module size
-
-### 0.2.0
-* (foxriver76) preparations for offical repository
-
-### 0.1.9
-* (foxriver76) improved stability
-* (foxriver76) improved fault tolerance on volume (e. g. for use as smart device)
-
-### 0.1.8
-* (foxriver76) adapter sepcific connection error handling
-* (foxriver76) minor reconnect fix
-
-### 0.1.7
-* (foxriver76) subwoofer level is now in dB
-* (foxriver76) added control of treble, bass and tone control state
-* (foxriver76) readme updated
-
-### 0.1.6
-* (foxriver76) connection stability improvements
-* (foxriver76) some parameter settings added
-* (foxriver76) readme updated
-
-### 0.1.5
-* (foxriver76) sleep timer for every zone
-* (foxriver76) admin2 compatibility
-* (foxriver76) minor fixes
-
-### 0.1.4
-* (foxriver76) HEOS bug fix (timeout)
-* (foxriver76) new state for custom commands (expertCommand)
-* (foxriver76) enhanced readme
-
-### 0.1.3
-* (foxriver76) bug fixes for Zone3
-* (foxriver76) new state for main zone power
-* (foxriver76) minor other improvements
-
-### 0.1.2
-* (foxriver76) Performance optimization
-* (foxriver76) Faster display update
-* (foxriver76) More appropriate reconnect intervall
-
-### 0.1.1
-* (foxriver76) new readme for npm
-
-### 0.1.0
-* (foxriver76) handling up to three zones
-* (foxriver76) handling display content
-* (foxriver76) setting display brightness
-
-### 0.0.1
-* (foxriver76) initial release
+Older changes can be found in [CHANGELOG_OLD.md](CHANGELOG_OLD.md)
 
 ## License
 The MIT License (MIT)
 
-Copyright (c) 2018-2024 Moritz Heusinger <moritz.heusinger@gmail.com>
+Copyright (c) 2018-2026 Moritz Heusinger <moritz.heusinger@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

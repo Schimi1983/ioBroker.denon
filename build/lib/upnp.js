@@ -32,11 +32,11 @@ __export(upnp_exports, {
   ssdpScan: () => ssdpScan
 });
 module.exports = __toCommonJS(upnp_exports);
-var import_http = __toESM(require("http"));
-var import_dgram = __toESM(require("dgram"));
-var import_os = require("os");
+var import_node_http = __toESM(require("node:http"));
+var import_node_dgram = __toESM(require("node:dgram"));
+var import_node_os = require("node:os");
 function httpGet(link, timeout, callback) {
-  const req = import_http.default.get(link, (res) => {
+  const req = import_node_http.default.get(link, (res) => {
     const statusCode = res.statusCode;
     if (statusCode !== 200) {
       res.resume();
@@ -57,14 +57,14 @@ function httpGet(link, timeout, callback) {
 function ssdpScan(text, readXml, timeout, callback) {
   timeout = timeout || 1e3;
   let timer;
-  const interfaces = (0, import_os.networkInterfaces)();
+  const interfaces = (0, import_node_os.networkInterfaces)();
   const sockets = [];
   const result = [];
   Object.keys(interfaces).forEach((iName) => {
     interfaces[iName].forEach((ipInfo) => {
       if (!ipInfo.internal && ipInfo.family === "IPv4") {
         ((ip) => {
-          const socket = import_dgram.default.createSocket({ type: "udp4", reuseAddr: true });
+          const socket = import_node_dgram.default.createSocket({ type: "udp4", reuseAddr: true });
           if (socket) {
             socket.unref();
             socket.on("error", (err) => {

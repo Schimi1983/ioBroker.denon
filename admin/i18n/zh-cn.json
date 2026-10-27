@@ -9,5 +9,7 @@
     "Minimum gap between two commands. The protocol requires at least 50 ms": "两条命令之间的最小间隔。协议要求至少 50 毫秒",
     "Telnet port": "Telnet 端口",
     "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "所有 AVR 均为 23。仅在使用串口转 IP 网桥时修改",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "输入地址或选择在网络中找到的设备。搜索需要实例正在运行，并且只能找到同一子网中的 AVR。"
+    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "输入地址或选择在网络中找到的设备。搜索需要实例正在运行，并且只能找到同一子网中的 AVR。",
+    "Identify device via HTTP": "通过 HTTP 识别设备",
+    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "启动时读取一次 Deviceinfo.xml（品牌、型号、区域数）。控制始终使用 telnet"
 }
