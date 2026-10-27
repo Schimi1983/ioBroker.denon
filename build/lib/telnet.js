@@ -285,20 +285,25 @@ class DenonTelnetClient extends import_node_events.EventEmitter {
    */
   startWatchdog() {
     this.stopWatchdog();
-    const checkEvery = Math.max(1e3, Math.floor(this.opts.keepaliveAfterMs / 3));
+    const checkEvery = Math.max(100, Math.floor(this.opts.keepaliveAfterMs / 3));
+    const graceMs = Math.max(this.opts.deadAfterMs - this.opts.keepaliveAfterMs, checkEvery);
     this.watchdogTimer = this.opts.timers.setInterval(() => {
       if (!this.connectedFlag || !this.socket) {
         return;
       }
-      const silentFor = Date.now() - this.lastRxAt;
-      if (silentFor >= this.opts.deadAfterMs) {
+      const now = Date.now();
+      const silentFor = now - this.lastRxAt;
+      if (silentFor < this.opts.keepaliveAfterMs) {
+        return;
+      }
+      if (!this.keepaliveSentAt) {
+        this.keepaliveSentAt = now;
+        void this.send(this.opts.keepaliveCommand, "high");
+      } else if (now - this.keepaliveSentAt >= graceMs) {
         this.opts.log.debug(`[TELNET] No data for ${silentFor} ms, connection considered dead`);
         this.lastErrorCode = "ETIMEDOUT";
         this.emit("connectError", "ETIMEDOUT", "no response from AVR", false);
         this.socket.destroy();
-      } else if (silentFor >= this.opts.keepaliveAfterMs && !this.keepaliveSentAt) {
-        this.keepaliveSentAt = Date.now();
-        void this.send(this.opts.keepaliveCommand, "high");
       }
     }, checkEvery);
   }

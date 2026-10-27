@@ -1,3 +1,19 @@
+/** Dimmer values, key = protocol code (DIM BRI|DIM|DAR|OFF) */
+export const BRIGHTNESS_STATES: Record<string, string> = {
+    OFF: 'Off',
+    DAR: 'Dark',
+    DIM: 'Dimmed',
+    BRI: 'Bright',
+};
+
+/** Video processing modes, key = protocol code (VSVPMAUTO|GAME|MOVI|BYP) */
+export const VIDEO_PROCESSING_STATES: Record<string, string> = {
+    AUTO: 'Auto',
+    GAME: 'Game',
+    MOVI: 'Movie',
+    BYP: 'Bypass',
+};
+
 export const commonCommands: ioBroker.AnyObject[] = [
     {
         _id: 'info.friendlyName',
@@ -7,17 +23,17 @@ export const commonCommands: ioBroker.AnyObject[] = [
             name: 'Friendly Name',
             type: 'string',
             read: true,
-            write: false
+            write: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'tuner',
         type: 'channel',
         common: {
-            name: 'Tuner'
+            name: 'Tuner',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'tuner.frequencyUp',
@@ -27,9 +43,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'tuner.frequencyDown',
@@ -39,9 +55,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'tuner.stationName',
@@ -51,9 +67,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'text',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'tuner.frequency',
@@ -63,17 +79,17 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'value',
             type: 'number',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain',
         type: 'channel',
         common: {
-            name: 'Main Zone'
+            name: 'Main Zone',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.powerZone',
@@ -83,9 +99,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch.power.zone',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.volume',
@@ -97,9 +113,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             write: true,
             min: 0,
-            max: 98
+            max: 98,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.volumeUp',
@@ -109,9 +125,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.volumeDown',
@@ -121,9 +137,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.selectInput',
@@ -135,33 +151,33 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             read: true,
             states: {
-                0: 'PHONO',
-                1: 'CD',
-                2: 'TUNER',
-                3: 'DVD',
-                4: 'BD',
-                5: 'TV',
-                6: 'SAT/CBL',
-                7: 'MPLAY',
-                8: 'GAME',
-                9: 'NET',
-                10: 'SPOTIFY',
-                11: 'LASTFM',
-                12: 'IRADIO',
-                13: 'SERVER',
-                14: 'FAVORITES',
-                15: 'AUX1',
-                16: 'AUX2',
-                17: 'AUX3',
-                18: 'AUX4',
-                19: 'AUX5',
-                20: 'AUX6',
-                21: 'AUX7',
-                22: 'BT',
-                23: 'USB'
-            }
+                PHONO: 'PHONO',
+                CD: 'CD',
+                TUNER: 'TUNER',
+                DVD: 'DVD',
+                BD: 'BD',
+                TV: 'TV',
+                'SAT/CBL': 'SAT/CBL',
+                MPLAY: 'MPLAY',
+                GAME: 'GAME',
+                NET: 'NET',
+                SPOTIFY: 'SPOTIFY',
+                LASTFM: 'LASTFM',
+                IRADIO: 'IRADIO',
+                SERVER: 'SERVER',
+                FAVORITES: 'FAVORITES',
+                AUX1: 'AUX1',
+                AUX2: 'AUX2',
+                AUX3: 'AUX3',
+                AUX4: 'AUX4',
+                AUX5: 'AUX5',
+                AUX6: 'AUX6',
+                AUX7: 'AUX7',
+                BT: 'BT',
+                USB: 'USB',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.playPause',
@@ -171,9 +187,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.play',
@@ -183,9 +199,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.pause',
@@ -195,9 +211,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.skipPlus',
@@ -207,9 +223,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.skipMinus',
@@ -219,9 +235,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.maximumVolume',
@@ -231,9 +247,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'state',
             type: 'number',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.muteIndicator',
@@ -243,9 +259,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'media.mute',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.quickSelect',
@@ -256,10 +272,10 @@ export const commonCommands: ioBroker.AnyObject[] = [
             type: 'number',
             write: true,
             read: true,
-            min: 1,
-            max: 5
+            min: 0,
+            max: 5,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.sleepTimer',
@@ -272,9 +288,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             read: true,
             min: 0,
-            max: 120
+            max: 120,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerBass',
@@ -287,9 +303,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             unit: 'dB',
             min: -6,
-            max: 6
+            max: 6,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerBassUp',
@@ -299,9 +315,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerBassDown',
@@ -311,9 +327,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerTreble',
@@ -326,9 +342,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             unit: 'dB',
             min: -6,
-            max: 6
+            max: 6,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerTrebleUp',
@@ -338,9 +354,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.equalizerTrebleDown',
@@ -350,9 +366,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.volumeDB',
@@ -365,9 +381,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             min: -80,
             max: 18,
-            unit: 'dB'
+            unit: 'dB',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneMain.maximumVolumeDB',
@@ -378,9 +394,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             type: 'number',
             write: false,
             read: true,
-            unit: 'dB'
+            unit: 'dB',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.surroundMode',
@@ -392,30 +408,30 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             read: true,
             states: {
-                0: 'STEREO',
-                1: 'VIRTUAL',
-                2: 'VIDEO GAME',
-                3: 'MCH STEREO',
-                4: 'DTS SURROUND',
-                5: 'DOLBY DIGITAL',
-                6: 'MOVIE',
-                7: 'MUSIC',
-                8: 'DIRECT',
-                9: 'PURE DIRECT',
-                10: 'AUTO',
-                11: 'GAME',
-                12: 'AURO3D',
-                13: 'AURO2DSURR',
-                14: 'WIDE SCREEN',
-                15: 'SUPER STADIUM',
-                16: 'ROCK ARENA',
-                17: 'JAZZ CLUB',
-                18: 'CLASSIC CONCERT',
-                19: 'MONO MOVIE',
-                20: 'MATRIX'
-            }
+                STEREO: 'STEREO',
+                VIRTUAL: 'VIRTUAL',
+                'VIDEO GAME': 'VIDEO GAME',
+                'MCH STEREO': 'MCH STEREO',
+                'DTS SURROUND': 'DTS SURROUND',
+                'DOLBY DIGITAL': 'DOLBY DIGITAL',
+                MOVIE: 'MOVIE',
+                MUSIC: 'MUSIC',
+                DIRECT: 'DIRECT',
+                'PURE DIRECT': 'PURE DIRECT',
+                AUTO: 'AUTO',
+                GAME: 'GAME',
+                AURO3D: 'AURO3D',
+                AURO2DSURR: 'AURO2DSURR',
+                'WIDE SCREEN': 'WIDE SCREEN',
+                'SUPER STADIUM': 'SUPER STADIUM',
+                'ROCK ARENA': 'ROCK ARENA',
+                'JAZZ CLUB': 'JAZZ CLUB',
+                'CLASSIC CONCERT': 'CLASSIC CONCERT',
+                'MONO MOVIE': 'MONO MOVIE',
+                MATRIX: 'MATRIX',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.dynamicEq',
@@ -425,9 +441,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.subwooferLevelState',
@@ -438,9 +454,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.subwooferLevel',
@@ -453,9 +469,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             min: -12,
             max: 12,
-            unit: 'dB'
+            unit: 'dB',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.subwooferLevelUp',
@@ -465,9 +481,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.subwooferLevelDown',
@@ -477,9 +493,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.multEq',
@@ -491,14 +507,14 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             read: true,
             states: {
-                0: 'OFF',
-                1: 'AUDYSSEY',
-                2: 'BYP.LR',
-                3: 'FLAT',
-                4: 'MANUAL'
-            }
+                OFF: 'OFF',
+                AUDYSSEY: 'AUDYSSEY',
+                'BYP.LR': 'BYP.LR',
+                FLAT: 'FLAT',
+                MANUAL: 'MANUAL',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.dynamicVolume',
@@ -510,13 +526,13 @@ export const commonCommands: ioBroker.AnyObject[] = [
             write: true,
             read: true,
             states: {
-                0: 'OFF',
-                1: 'LIT',
-                2: 'MED',
-                3: 'HEV'
-            }
+                OFF: 'OFF',
+                LIT: 'LIT',
+                MED: 'MED',
+                HEV: 'HEV',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.referenceLevelOffset',
@@ -532,10 +548,10 @@ export const commonCommands: ioBroker.AnyObject[] = [
                 0: '0',
                 5: '5',
                 10: '10',
-                15: '15'
-            }
+                15: '15',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.toneControl',
@@ -545,9 +561,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.cursorUp',
@@ -557,9 +573,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.cursorDown',
@@ -569,9 +585,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.cursorRight',
@@ -581,9 +597,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.cursorLeft',
@@ -593,9 +609,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.enter',
@@ -605,9 +621,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.return',
@@ -617,9 +633,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.option',
@@ -629,9 +645,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.info',
@@ -641,9 +657,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'button',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.setupMenu',
@@ -653,9 +669,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.centerSpread',
@@ -665,9 +681,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'info.onlinePresets',
@@ -678,9 +694,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             type: 'string',
             write: false,
             read: true,
-            def: '{}'
+            def: '{}',
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.savePreset',
@@ -690,9 +706,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'presets.save',
             type: 'string',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.loadPreset',
@@ -702,9 +718,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'presets.load',
             type: 'string',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.lfeAmount',
@@ -717,9 +733,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             unit: 'dB',
             min: 0,
-            max: 10
+            max: 10,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.dialogLevelAdjust',
@@ -729,9 +745,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             role: 'indicator',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.dialogLevel',
@@ -744,9 +760,9 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             unit: 'dB',
             min: -12,
-            max: 12
+            max: 12,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.dialogControl',
@@ -759,11 +775,11 @@ export const commonCommands: ioBroker.AnyObject[] = [
             read: true,
             unit: 'dB',
             min: 0,
-            max: 6
+            max: 6,
         },
-        native: {}
+        native: {},
     },
-    ...getChannelVolumeObjects()
+    ...getChannelVolumeObjects(),
 ];
 
 export const usCommandsZone: ioBroker.StateObject[] = [
@@ -777,9 +793,9 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             write: true,
             read: true,
             min: 0,
-            max: 99
+            max: 99,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'speakerTwoVolume',
@@ -791,9 +807,9 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             write: true,
             read: true,
             min: 0,
-            max: 99
+            max: 99,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'selectInputOne',
@@ -808,10 +824,10 @@ export const usCommandsZone: ioBroker.StateObject[] = [
                 0: 'BUS L',
                 1: 'BUS R',
                 2: 'BUS M',
-                3: 'AUX'
-            }
+                3: 'AUX',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'selectInputTwo',
@@ -826,10 +842,10 @@ export const usCommandsZone: ioBroker.StateObject[] = [
                 0: 'BUS L',
                 1: 'BUS R',
                 2: 'BUS M',
-                3: 'AUX'
-            }
+                3: 'AUX',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'operationMode',
@@ -842,10 +858,10 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             read: true,
             states: {
                 0: 'NORMAL',
-                1: 'BRIDGED'
-            }
+                1: 'BRIDGED',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'lowCutFilterSpeakerOne',
@@ -855,9 +871,9 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             role: 'media.switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'lowCutFilterSpeakerTwo',
@@ -867,9 +883,9 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             role: 'media.switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'zoneTurnOnModeChange',
@@ -884,10 +900,10 @@ export const usCommandsZone: ioBroker.StateObject[] = [
                 0: 'Constant',
                 1: 'Trigger in',
                 2: 'Audio signal',
-                3: 'Off'
-            }
+                3: 'Off',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'triggerInput',
@@ -897,9 +913,9 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             role: 'media.input',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'audioSignalInput',
@@ -909,10 +925,10 @@ export const usCommandsZone: ioBroker.StateObject[] = [
             role: 'media.input',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
-    }
+        native: {},
+    },
 ];
 
 export const usCommands: ioBroker.StateObject[] = [
@@ -928,10 +944,10 @@ export const usCommands: ioBroker.StateObject[] = [
             states: {
                 0: 'Power Button',
                 1: 'Master Trigger',
-                2: 'On Line'
-            }
+                2: 'On Line',
+            },
         },
-        native: {}
+        native: {},
     },
     {
         _id: 'settings.masterTriggerInput',
@@ -941,10 +957,10 @@ export const usCommands: ioBroker.StateObject[] = [
             role: 'media.status',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
-    }
+        native: {},
+    },
 ];
 
 export const lfcCommands: Record<string, ioBroker.SettableStateObject> = {
@@ -955,9 +971,9 @@ export const lfcCommands: Record<string, ioBroker.SettableStateObject> = {
             role: 'switch',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'settings.containmentAmount': {
         type: 'state',
@@ -968,9 +984,9 @@ export const lfcCommands: Record<string, ioBroker.SettableStateObject> = {
             write: true,
             read: true,
             min: 1,
-            max: 7
+            max: 7,
         },
-        native: {}
+        native: {},
     },
     'settings.containmentAmountUp': {
         type: 'state',
@@ -979,9 +995,9 @@ export const lfcCommands: Record<string, ioBroker.SettableStateObject> = {
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     'settings.containmentAmountDown': {
         type: 'state',
@@ -990,10 +1006,10 @@ export const lfcCommands: Record<string, ioBroker.SettableStateObject> = {
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
-    }
+        native: {},
+    },
 };
 
 export const subwooferTwoStates: Record<string, ioBroker.SettableStateObject> = {
@@ -1007,9 +1023,9 @@ export const subwooferTwoStates: Record<string, ioBroker.SettableStateObject> = 
             read: true,
             min: -12,
             max: 12,
-            unit: 'dB'
+            unit: 'dB',
         },
-        native: {}
+        native: {},
     },
     'settings.subwooferTwoLevelUp': {
         type: 'state',
@@ -1018,9 +1034,9 @@ export const subwooferTwoStates: Record<string, ioBroker.SettableStateObject> = 
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     },
     'settings.subwooferTwoLevelDown': {
         type: 'state',
@@ -1029,10 +1045,10 @@ export const subwooferTwoStates: Record<string, ioBroker.SettableStateObject> = 
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
-    }
+        native: {},
+    },
 };
 
 export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
@@ -1043,9 +1059,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent1': {
         type: 'state',
@@ -1054,9 +1070,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent2': {
         type: 'state',
@@ -1065,9 +1081,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent3': {
         type: 'state',
@@ -1076,9 +1092,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent4': {
         type: 'state',
@@ -1087,9 +1103,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent5': {
         type: 'state',
@@ -1098,9 +1114,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent6': {
         type: 'state',
@@ -1109,9 +1125,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent7': {
         type: 'state',
@@ -1120,9 +1136,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'display.displayContent8': {
         type: 'state',
@@ -1131,9 +1147,9 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'info.display',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     },
     'zoneMain.iconURL': {
         type: 'state',
@@ -1142,14 +1158,15 @@ export const displayHttpStates: Record<string, ioBroker.SettableStateObject> = {
             role: 'media.cover',
             type: 'string',
             write: false,
-            read: true
+            read: true,
         },
-        native: {}
-    }
+        native: {},
+    },
 };
 
 /**
  * Retrive zone objects for given zone
+ *
  * @param zone number of the zone
  */
 export function getZoneObjects(zone: number): Record<string, ioBroker.SettableObject> {
@@ -1158,9 +1175,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
     res[`zone${zone}`] = {
         type: 'channel',
         common: {
-            name: `Zone ${zone}`
+            name: `Zone ${zone}`,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.powerZone`] = {
@@ -1170,9 +1187,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'switch.power.zone',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.volume`] = {
@@ -1184,9 +1201,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             write: true,
             min: 0,
-            max: 98
+            max: 98,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.volumeDB`] = {
@@ -1199,9 +1216,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             write: true,
             min: -80,
-            max: 18
+            max: 18,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.volumeUp`] = {
@@ -1211,9 +1228,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.volumeDown`] = {
@@ -1223,9 +1240,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.selectInput`] = {
@@ -1237,33 +1254,33 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             write: true,
             read: true,
             states: {
-                0: 'PHONO',
-                1: 'CD',
-                2: 'TUNER',
-                3: 'DVD',
-                4: 'BD',
-                5: 'TV',
-                6: 'SAT/CBL',
-                7: 'MPLAY',
-                8: 'GAME',
-                9: 'NET',
-                10: 'SPOTIFY',
-                11: 'LASTFM',
-                12: 'IRADIO',
-                13: 'SERVER',
-                14: 'FAVORITES',
-                15: 'AUX1',
-                16: 'AUX2',
-                17: 'AUX3',
-                18: 'AUX4',
-                19: 'AUX5',
-                20: 'AUX6',
-                21: 'AUX7',
-                22: 'BT',
-                23: 'USB'
-            }
+                PHONO: 'PHONO',
+                CD: 'CD',
+                TUNER: 'TUNER',
+                DVD: 'DVD',
+                BD: 'BD',
+                TV: 'TV',
+                'SAT/CBL': 'SAT/CBL',
+                MPLAY: 'MPLAY',
+                GAME: 'GAME',
+                NET: 'NET',
+                SPOTIFY: 'SPOTIFY',
+                LASTFM: 'LASTFM',
+                IRADIO: 'IRADIO',
+                SERVER: 'SERVER',
+                FAVORITES: 'FAVORITES',
+                AUX1: 'AUX1',
+                AUX2: 'AUX2',
+                AUX3: 'AUX3',
+                AUX4: 'AUX4',
+                AUX5: 'AUX5',
+                AUX6: 'AUX6',
+                AUX7: 'AUX7',
+                BT: 'BT',
+                USB: 'USB',
+            },
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.muteIndicator`] = {
@@ -1273,9 +1290,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'media.mute',
             type: 'boolean',
             write: true,
-            read: true
+            read: true,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.quickSelect`] = {
@@ -1286,10 +1303,10 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             type: 'number',
             write: true,
             read: true,
-            min: 1,
-            max: 5
+            min: 0,
+            max: 5,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.sleepTimer`] = {
@@ -1302,9 +1319,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             write: true,
             read: true,
             min: 0,
-            max: 120
+            max: 120,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerBass`] = {
@@ -1317,9 +1334,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             unit: 'dB',
             min: -6,
-            max: 6
+            max: 6,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerBassUp`] = {
@@ -1329,9 +1346,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerBassDown`] = {
@@ -1341,9 +1358,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerTreble`] = {
@@ -1356,9 +1373,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             unit: 'dB',
             min: -6,
-            max: 6
+            max: 6,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerTrebleUp`] = {
@@ -1368,9 +1385,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.equalizerTrebleDown`] = {
@@ -1380,9 +1397,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             role: 'button',
             type: 'boolean',
             write: true,
-            read: false
+            read: false,
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.channelVolumeFrontRight`] = {
@@ -1395,9 +1412,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             min: -12,
             max: 12,
-            unit: 'dB'
+            unit: 'dB',
         },
-        native: {}
+        native: {},
     };
 
     res[`zone${zone}.channelVolumeFrontLeft`] = {
@@ -1410,9 +1427,9 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             read: true,
             unit: 'dB',
             min: -12,
-            max: 12
+            max: 12,
         },
-        native: {}
+        native: {},
     };
 
     return res;
@@ -1459,7 +1476,7 @@ function getChannelVolumeObjects(): ioBroker.StateObject[] {
         'Back Dolby Right',
         'Top Surround',
         'Center Height',
-        'Tactile Transducer'
+        'Tactile Transducer',
     ] as const;
 
     for (const channel of channelVolumes) {
@@ -1474,9 +1491,9 @@ function getChannelVolumeObjects(): ioBroker.StateObject[] {
                 read: true,
                 min: -12,
                 max: 12,
-                unit: 'dB'
+                unit: 'dB',
             },
-            native: {}
+            native: {},
         });
     }
 

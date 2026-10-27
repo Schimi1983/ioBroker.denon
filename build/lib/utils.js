@@ -18,13 +18,10 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var utils_exports = {};
 __export(utils_exports, {
-  dbToVol: () => dbToVol,
   decodeState: () => decodeState,
-  inputToVol: () => inputToVol,
   isObject: () => isObject,
-  reverseObject: () => reverseObject,
-  volToDb: () => volToDb,
-  wait: () => wait
+  resolveStateKey: () => resolveStateKey,
+  volToDb: () => volToDb
 });
 module.exports = __toCommonJS(utils_exports);
 function decodeState(stateRecord, state) {
@@ -34,21 +31,6 @@ function decodeState(stateRecord, state) {
     }
   }
   return "";
-}
-function inputToVol(input) {
-  let leadingZero;
-  if (input < 0) {
-    input = 0;
-  }
-  if (input % 0.5 !== 0) {
-    input = Math.round(input * 2) / 2;
-  }
-  if (input < 10) {
-    leadingZero = "0";
-  } else {
-    leadingZero = "";
-  }
-  return leadingZero + input.toString().replace(".", "");
 }
 function volToDb(volStr) {
   let vol;
@@ -60,32 +42,33 @@ function volToDb(volStr) {
   vol -= 50;
   return vol;
 }
-function wait(ms) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, ms);
-  });
-}
-function dbToVol(vol) {
-  vol += 50;
-  vol = vol.toString().replace(".", "");
-  return vol;
-}
 function isObject(it) {
   return Object.prototype.toString.call(it) === "[object Object]";
 }
-function reverseObject(obj) {
-  return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));
+function resolveStateKey(stateRecord, val) {
+  if (val === null || val === void 0) {
+    return void 0;
+  }
+  const str = String(val).trim();
+  if (!stateRecord || !isObject(stateRecord)) {
+    return str || void 0;
+  }
+  if (Object.prototype.hasOwnProperty.call(stateRecord, str)) {
+    return str;
+  }
+  const upper = str.toUpperCase();
+  for (const [key, label] of Object.entries(stateRecord)) {
+    if (String(label).toUpperCase() === upper) {
+      return key;
+    }
+  }
+  return void 0;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  dbToVol,
   decodeState,
-  inputToVol,
   isObject,
-  reverseObject,
-  volToDb,
-  wait
+  resolveStateKey,
+  volToDb
 });
 //# sourceMappingURL=utils.js.map

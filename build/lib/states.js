@@ -18,6 +18,8 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var states_exports = {};
 __export(states_exports, {
+  BRIGHTNESS_STATES: () => BRIGHTNESS_STATES,
+  VIDEO_PROCESSING_STATES: () => VIDEO_PROCESSING_STATES,
   commonCommands: () => commonCommands,
   displayHttpStates: () => displayHttpStates,
   getZoneObjects: () => getZoneObjects,
@@ -27,6 +29,18 @@ __export(states_exports, {
   usCommandsZone: () => usCommandsZone
 });
 module.exports = __toCommonJS(states_exports);
+const BRIGHTNESS_STATES = {
+  OFF: "Off",
+  DAR: "Dark",
+  DIM: "Dimmed",
+  BRI: "Bright"
+};
+const VIDEO_PROCESSING_STATES = {
+  AUTO: "Auto",
+  GAME: "Game",
+  MOVI: "Movie",
+  BYP: "Bypass"
+};
 const commonCommands = [
   {
     _id: "info.friendlyName",
@@ -164,30 +178,30 @@ const commonCommands = [
       write: true,
       read: true,
       states: {
-        0: "PHONO",
-        1: "CD",
-        2: "TUNER",
-        3: "DVD",
-        4: "BD",
-        5: "TV",
-        6: "SAT/CBL",
-        7: "MPLAY",
-        8: "GAME",
-        9: "NET",
-        10: "SPOTIFY",
-        11: "LASTFM",
-        12: "IRADIO",
-        13: "SERVER",
-        14: "FAVORITES",
-        15: "AUX1",
-        16: "AUX2",
-        17: "AUX3",
-        18: "AUX4",
-        19: "AUX5",
-        20: "AUX6",
-        21: "AUX7",
-        22: "BT",
-        23: "USB"
+        PHONO: "PHONO",
+        CD: "CD",
+        TUNER: "TUNER",
+        DVD: "DVD",
+        BD: "BD",
+        TV: "TV",
+        "SAT/CBL": "SAT/CBL",
+        MPLAY: "MPLAY",
+        GAME: "GAME",
+        NET: "NET",
+        SPOTIFY: "SPOTIFY",
+        LASTFM: "LASTFM",
+        IRADIO: "IRADIO",
+        SERVER: "SERVER",
+        FAVORITES: "FAVORITES",
+        AUX1: "AUX1",
+        AUX2: "AUX2",
+        AUX3: "AUX3",
+        AUX4: "AUX4",
+        AUX5: "AUX5",
+        AUX6: "AUX6",
+        AUX7: "AUX7",
+        BT: "BT",
+        USB: "USB"
       }
     },
     native: {}
@@ -285,7 +299,7 @@ const commonCommands = [
       type: "number",
       write: true,
       read: true,
-      min: 1,
+      min: 0,
       max: 5
     },
     native: {}
@@ -421,27 +435,27 @@ const commonCommands = [
       write: true,
       read: true,
       states: {
-        0: "STEREO",
-        1: "VIRTUAL",
-        2: "VIDEO GAME",
-        3: "MCH STEREO",
-        4: "DTS SURROUND",
-        5: "DOLBY DIGITAL",
-        6: "MOVIE",
-        7: "MUSIC",
-        8: "DIRECT",
-        9: "PURE DIRECT",
-        10: "AUTO",
-        11: "GAME",
-        12: "AURO3D",
-        13: "AURO2DSURR",
-        14: "WIDE SCREEN",
-        15: "SUPER STADIUM",
-        16: "ROCK ARENA",
-        17: "JAZZ CLUB",
-        18: "CLASSIC CONCERT",
-        19: "MONO MOVIE",
-        20: "MATRIX"
+        STEREO: "STEREO",
+        VIRTUAL: "VIRTUAL",
+        "VIDEO GAME": "VIDEO GAME",
+        "MCH STEREO": "MCH STEREO",
+        "DTS SURROUND": "DTS SURROUND",
+        "DOLBY DIGITAL": "DOLBY DIGITAL",
+        MOVIE: "MOVIE",
+        MUSIC: "MUSIC",
+        DIRECT: "DIRECT",
+        "PURE DIRECT": "PURE DIRECT",
+        AUTO: "AUTO",
+        GAME: "GAME",
+        AURO3D: "AURO3D",
+        AURO2DSURR: "AURO2DSURR",
+        "WIDE SCREEN": "WIDE SCREEN",
+        "SUPER STADIUM": "SUPER STADIUM",
+        "ROCK ARENA": "ROCK ARENA",
+        "JAZZ CLUB": "JAZZ CLUB",
+        "CLASSIC CONCERT": "CLASSIC CONCERT",
+        "MONO MOVIE": "MONO MOVIE",
+        MATRIX: "MATRIX"
       }
     },
     native: {}
@@ -520,11 +534,11 @@ const commonCommands = [
       write: true,
       read: true,
       states: {
-        0: "OFF",
-        1: "AUDYSSEY",
-        2: "BYP.LR",
-        3: "FLAT",
-        4: "MANUAL"
+        OFF: "OFF",
+        AUDYSSEY: "AUDYSSEY",
+        "BYP.LR": "BYP.LR",
+        FLAT: "FLAT",
+        MANUAL: "MANUAL"
       }
     },
     native: {}
@@ -539,10 +553,10 @@ const commonCommands = [
       write: true,
       read: true,
       states: {
-        0: "OFF",
-        1: "LIT",
-        2: "MED",
-        3: "HEV"
+        OFF: "OFF",
+        LIT: "LIT",
+        MED: "MED",
+        HEV: "HEV"
       }
     },
     native: {}
@@ -1249,30 +1263,30 @@ function getZoneObjects(zone) {
       write: true,
       read: true,
       states: {
-        0: "PHONO",
-        1: "CD",
-        2: "TUNER",
-        3: "DVD",
-        4: "BD",
-        5: "TV",
-        6: "SAT/CBL",
-        7: "MPLAY",
-        8: "GAME",
-        9: "NET",
-        10: "SPOTIFY",
-        11: "LASTFM",
-        12: "IRADIO",
-        13: "SERVER",
-        14: "FAVORITES",
-        15: "AUX1",
-        16: "AUX2",
-        17: "AUX3",
-        18: "AUX4",
-        19: "AUX5",
-        20: "AUX6",
-        21: "AUX7",
-        22: "BT",
-        23: "USB"
+        PHONO: "PHONO",
+        CD: "CD",
+        TUNER: "TUNER",
+        DVD: "DVD",
+        BD: "BD",
+        TV: "TV",
+        "SAT/CBL": "SAT/CBL",
+        MPLAY: "MPLAY",
+        GAME: "GAME",
+        NET: "NET",
+        SPOTIFY: "SPOTIFY",
+        LASTFM: "LASTFM",
+        IRADIO: "IRADIO",
+        SERVER: "SERVER",
+        FAVORITES: "FAVORITES",
+        AUX1: "AUX1",
+        AUX2: "AUX2",
+        AUX3: "AUX3",
+        AUX4: "AUX4",
+        AUX5: "AUX5",
+        AUX6: "AUX6",
+        AUX7: "AUX7",
+        BT: "BT",
+        USB: "USB"
       }
     },
     native: {}
@@ -1296,7 +1310,7 @@ function getZoneObjects(zone) {
       type: "number",
       write: true,
       read: true,
-      min: 1,
+      min: 0,
       max: 5
     },
     native: {}
@@ -1477,6 +1491,8 @@ function getChannelVolumeObjects() {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  BRIGHTNESS_STATES,
+  VIDEO_PROCESSING_STATES,
   commonCommands,
   displayHttpStates,
   getZoneObjects,

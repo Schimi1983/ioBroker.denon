@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "denon",
-    "version": "1.15.12",
+    "version": "2.0.0-alpha.0",
     "news": {
+      "2.0.0-alpha.0": {
+        "en": "Breaking: value lists of brightness, video processing mode and picture mode now use protocol codes\nnew telnet transport: line buffer, send queue, keepalive, reconnect with backoff\nfixed display lines, picture mode, video processing mode, channel volume SW2-4, unknown surround modes\nAdmin UI migrated to jsonConfig, Node.js >= 22, js-controller >= 6.0.11",
+        "de": "Breaking: Wertelisten von Helligkeit, Videoverarbeitung und Bildmodus nutzen jetzt die Protokoll-Codes\nneuer Telnet-Transport: Zeilenpuffer, Sende-Warteschlange, Keepalive, Reconnect mit Backoff\nDisplayzeilen, Bildmodus, Videoverarbeitung, Kanalpegel SW2-4 und unbekannte Surround-Modi korrigiert\nAdmin-Oberfläche auf jsonConfig umgestellt, Node.js >= 22, js-controller >= 6.0.11"
+      },
       "1.15.12": {
         "en": "updated dependencies\nadded tier and license information\nfixed invalid object `denon.0`",
         "de": "aktualisierte abhängigkeiten\nzusätzliche tier- und lizenzinformationen\nungültiges objekt `denon.0`",
@@ -43,10 +47,18 @@
         "zh-cn": "设定调制器频率的固定期( 关闭 # 328)"
       }
     },
-    "title": "DENON AVR",
     "titleLang": {
-      "en": "DENON AVR",
-      "de": "DENON AVR"
+      "en": "Denon/Marantz AVR",
+      "de": "Denon/Marantz AVR",
+      "ru": "Denon/Marantz AVR",
+      "pt": "Denon/Marantz AVR",
+      "nl": "Denon/Marantz AVR",
+      "fr": "Denon/Marantz AVR",
+      "it": "Denon/Marantz AVR",
+      "es": "Denon/Marantz AVR",
+      "pl": "Denon/Marantz AVR",
+      "uk": "Denon/Marantz AVR",
+      "zh-cn": "Denon/Marantz AVR"
     },
     "desc": {
       "en": "Control your DENON or Marantz AV Receiver",
@@ -58,7 +70,8 @@
       "it": "Controlla il tuo ricevitore audio DENON o Marantz",
       "es": "Controle su receptor AV DENON o Marantz",
       "pl": "Kontroluj swój odbiornik DENON lub Marantz AV",
-      "zh-cn": "控制你的天龙马兰士或AV接收器"
+      "zh-cn": "控制你的天龙马兰士或AV接收器",
+      "uk": "Керуйте своїм AV-ресивером DENON або Marantz"
     },
     "authors": [
       "Moritz Heusinger <moritz.heusinger@gmail.com>"
@@ -71,7 +84,6 @@
     "platform": "Javascript/Node.js",
     "mode": "daemon",
     "icon": "denon.png",
-    "materialize": true,
     "enabled": true,
     "compact": true,
     "messagebox": true,
@@ -94,25 +106,26 @@
     "dataSource": "push",
     "dependencies": [
       {
-        "js-controller": ">=5.0.0"
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "adminUI": {
+      "config": "json"
+    },
+    "globalDependencies": [
+      {
+        "admin": ">=7.6.17"
       }
     ]
   },
   "native": {
     "ip": "",
+    "telnetPort": 23,
     "pollInterval": 7000,
     "requestInterval": 100
   },
   "objects": [],
   "instanceObjects": [
-    {
-      "_id": "",
-      "type": "device",
-      "common": {
-        "name": "DENON device"
-      },
-      "native": {}
-    },
     {
       "_id": "info",
       "type": "channel",
@@ -152,10 +165,10 @@
         "write": true,
         "read": true,
         "states": {
-          "0": "Off",
-          "1": "Dark",
-          "2": "Dimmed",
-          "3": "Bright"
+          "OFF": "Off",
+          "DAR": "Dark",
+          "DIM": "Dimmed",
+          "BRI": "Bright"
         }
       },
       "native": {}
@@ -209,7 +222,7 @@
       "type": "state",
       "common": {
         "name": "Expert Reading Pattern",
-        "role": "regex",
+        "role": "text",
         "type": "string",
         "write": true,
         "read": true

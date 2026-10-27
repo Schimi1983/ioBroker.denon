@@ -906,8 +906,16 @@ The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
 ## Changelog
 <!--
 	Placeholder for the next version (at the beginning of the line):
-	### __WORK IN PROGRESS__
+	### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+* (Schimi1983) **Breaking:** value lists of `display.brightness`, `settings.videoProcessingMode` and `settings.pictureMode` now use the protocol codes as values (e.g. `BRI`, `MOVI`, `MOV`). Scripts and visualizations using the old values have to be adapted
+* (Schimi1983) value lists of surround mode, inputs, MultEQ and dynamic volume use the reported value as key, unknown values reported by the AVR are added automatically (fixes #316, #403)
+* (Schimi1983) new telnet transport: line buffer (CR only), prioritized send queue with protocol pacing (>= 50 ms, 1 s after power on), keepalive and reconnect with backoff
+* (Schimi1983) fixed display lines (control characters, cursor line was cut), picture mode (#317), video processing mode, channel volumes SW2-SW4, CVEND, sleep timer formatting
+* (Schimi1983) zones and quick/smart select flavor (Denon/Marantz) are only polled if present
+* (Schimi1983) refused connections (telnet in use by another app) are logged once (#240)
+* (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.17)
 ### 1.15.12 (2024-07-23)
 * (foxriver76) updated dependencies
 * (foxriver76) added tier and license information

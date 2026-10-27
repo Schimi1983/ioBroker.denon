@@ -41,6 +41,7 @@ function httpGet(link, timeout, callback) {
     if (statusCode !== 200) {
       res.resume();
       callback(statusCode, null, link);
+      return;
     }
     res.setEncoding("utf8");
     let rawData = "";

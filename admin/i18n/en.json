@@ -1,0 +1,13 @@
+{
+    "Connection": "Connection",
+    "IP address or hostname of the AVR": "IP address or hostname of the AVR",
+    "Select a found device or enter the address manually. Search only works while the instance is running.": "Select a found device or enter the address manually. Search only works while the instance is running.",
+    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.",
+    "Advanced settings": "Advanced settings",
+    "Poll interval (ms)": "Poll interval (ms)",
+    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Interval for states the AVR does not push itself (display, sleep timer, quick select)",
+    "Interval between commands (ms)": "Interval between commands (ms)",
+    "Minimum gap between two commands. The protocol requires at least 50 ms": "Minimum gap between two commands. The protocol requires at least 50 ms",
+    "Telnet port": "Telnet port",
+    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 on all AVRs. Only change it if a serial-to-IP bridge is used"
+}

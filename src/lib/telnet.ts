@@ -6,16 +6,23 @@ import net from 'node:net';
  * so all timers are cleared automatically on unload (repository checker S5005).
  */
 export interface TimerProvider {
+    /** Like global setTimeout */
     setTimeout: (cb: () => void, ms: number) => unknown;
+    /** Like global clearTimeout */
     clearTimeout: (handle: unknown) => void;
+    /** Like global setInterval */
     setInterval: (cb: () => void, ms: number) => unknown;
+    /** Like global clearInterval */
     clearInterval: (handle: unknown) => void;
 }
 
 /** Minimal logger interface (subset of ioBroker.Logger) */
 export interface TelnetLogger {
+    /** Debug log */
     debug: (msg: string) => void;
+    /** Info log */
     info: (msg: string) => void;
+    /** Warning log */
     warn: (msg: string) => void;
 }
 
@@ -39,7 +46,9 @@ export interface TelnetClientOptions {
     reconnectMaxMs?: number;
     /** Command sent as keepalive, must produce a response in every power state */
     keepaliveCommand?: string;
+    /** Timer functions, use the adapter's ones so they are cleaned up on unload */
     timers: TimerProvider;
+    /** Logger */
     log: TelnetLogger;
 }
 
@@ -47,16 +56,23 @@ export interface TelnetClientOptions {
 export type CommandPriority = 'high' | 'normal';
 
 interface QueueItem {
+    /** Command without CR */
     command: string;
+    /** Queue priority */
     priority: CommandPriority;
+    /** Resolves the promise of the sender once written */
     resolve: () => void;
 }
 
 /** Events emitted by {@link DenonTelnetClient} */
 export interface DenonTelnetClientEvents {
+    /** TCP connection established */
     connected: [];
+    /** Established connection was closed */
     disconnected: [reason: string];
+    /** One complete protocol line was received */
     line: [line: string];
+    /** Connection attempt or connection failed. repeated = same error code as last time */
     connectError: [code: string, message: string, repeated: boolean];
 }
 
@@ -364,20 +380,27 @@ export class DenonTelnetClient extends EventEmitter<DenonTelnetClientEvents> {
      */
     private startWatchdog(): void {
         this.stopWatchdog();
-        const checkEvery = Math.max(1_000, Math.floor(this.opts.keepaliveAfterMs / 3));
+        const checkEvery = Math.max(100, Math.floor(this.opts.keepaliveAfterMs / 3));
+        // time the AVR gets to answer the keepalive before the connection is dropped
+        const graceMs = Math.max(this.opts.deadAfterMs - this.opts.keepaliveAfterMs, checkEvery);
         this.watchdogTimer = this.opts.timers.setInterval(() => {
             if (!this.connectedFlag || !this.socket) {
                 return;
             }
-            const silentFor = Date.now() - this.lastRxAt;
-            if (silentFor >= this.opts.deadAfterMs) {
+            const now = Date.now();
+            const silentFor = now - this.lastRxAt;
+            if (silentFor < this.opts.keepaliveAfterMs) {
+                return;
+            }
+            if (!this.keepaliveSentAt) {
+                // never drop a connection without having asked the AVR first
+                this.keepaliveSentAt = now;
+                void this.send(this.opts.keepaliveCommand, 'high');
+            } else if (now - this.keepaliveSentAt >= graceMs) {
                 this.opts.log.debug(`[TELNET] No data for ${silentFor} ms, connection considered dead`);
                 this.lastErrorCode = 'ETIMEDOUT';
                 this.emit('connectError', 'ETIMEDOUT', 'no response from AVR', false);
                 this.socket.destroy();
-            } else if (silentFor >= this.opts.keepaliveAfterMs && !this.keepaliveSentAt) {
-                this.keepaliveSentAt = Date.now();
-                void this.send(this.opts.keepaliveCommand, 'high');
             }
         }, checkEvery);
     }

@@ -1,0 +1,13 @@
+{
+    "Connection": "Підключення",
+    "IP address or hostname of the AVR": "IP-адреса або ім'я хоста AVR",
+    "Select a found device or enter the address manually. Search only works while the instance is running.": "Виберіть знайдений пристрій або введіть адресу вручну. Пошук працює лише при запущеному екземплярі.",
+    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "AVR приймає лише ОДНЕ telnet-підключення. Від'єднайте інші застосунки (наприклад, Home Assistant) і встановіть в AVR мережеве керування (IP-керування) на «Завжди увімкнено».",
+    "Advanced settings": "Розширені налаштування",
+    "Poll interval (ms)": "Інтервал опитування (мс)",
+    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Інтервал для значень, які AVR не передає сам (дисплей, таймер сну, швидкий вибір)",
+    "Interval between commands (ms)": "Інтервал між командами (мс)",
+    "Minimum gap between two commands. The protocol requires at least 50 ms": "Мінімальний інтервал між двома командами. Протокол вимагає щонайменше 50 мс",
+    "Telnet port": "Порт telnet",
+    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 у всіх AVR. Змінюйте лише при використанні мосту послідовний порт-IP"
+}

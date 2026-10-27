@@ -25,6 +25,8 @@ export default [
         // you may disable some 'jsdoc' warnings - but using jsdoc is highly recommended
         // as this improves maintainability. jsdoc warnings will not block build process.
         rules: {
+            // project convention: architectural notes and workarounds are marked with @KI_HINWEIS:
+            'jsdoc/check-tag-names': ['warn', { definedTags: ['KI_HINWEIS', 'KI_HINWEIS:'] }],
             // 'jsdoc/require-jsdoc': 'off',
             // 'jsdoc/require-param': 'off',
             // 'jsdoc/require-param-description': 'off',

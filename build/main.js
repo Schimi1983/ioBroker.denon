@@ -22,7 +22,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var utils = __toESM(require("@iobroker/adapter-core"));
-var import_net = __toESM(require("net"));
+var import_telnet = require("./lib/telnet");
+var protocol = __toESM(require("./lib/protocol"));
 var helper = __toESM(require("./lib/utils"));
 var states = __toESM(require("./lib/states"));
 var import_upnp = require("./lib/upnp");
@@ -167,30 +168,24 @@ class Denon extends utils.Adapter {
     "TFANNAME?",
     "SPPR ?"
   ];
-  /** Commands to send during poll. Request Display State, Sleep Timer & Quick Select*/
-  pollCommands = [
-    "NSE",
-    "SLP?",
-    "Z2SLP?",
-    "Z3SLP?",
-    "MSQUICK ?",
-    "MSSMART ?",
-    "PR00TR?",
-    "Z2QUICK ?",
-    "Z3QUICK ?",
-    "Z2SMART ?",
-    "Z3SMART ?",
-    "BDSTATUS?"
-  ];
-  client = new import_net.default.Socket();
+  /**
+   * Commands to send during poll (display, sleep timer, quick select).
+   * Zone and brand specific commands are added in {@link getPollCommands}.
+   */
+  basePollCommands = ["NSE", "SLP?", "PR00TR?", "BDSTATUS?"];
+  /** Will be set after ready */
+  telnet = null;
   /** Will be set after ready */
   avrHost;
   /** Will be set after ready */
   pollInterval;
-  /** Will be set after ready */
-  requestInterval;
-  verboseConnection = true;
-  previousError;
+  pollTimer;
+  /** Serializes the processing of incoming lines, so states are updated in the order the AVR sent them */
+  lineChain = Promise.resolve();
+  /** Cached expert reading pattern, avoids a state read for every incoming line */
+  expertRegex = null;
+  /** True if the AVR answered with MSSMART (Marantz) instead of MSQUICK (Denon) */
+  quickSelectPrefix = null;
   // holds a true value for already created capabilities
   capabilities = {
     display: false,
@@ -200,134 +195,85 @@ class Denon extends utils.Adapter {
     pictureMode: false,
     speakerPreset: false
   };
-  /**
-   * Mapping id to command
-   */
-  CHANNEL_VOLUME_MAPPINGS = {
-    FrontLeft: "FL",
-    FrontRight: "FR",
-    Center: "C",
-    SurroundRight: "SR",
-    SurroundLeft: "SL",
-    SurroundDolbyRight: "SDR",
-    SurroundDolbyLeft: "SDL",
-    FrontDolbyLeft: "FDL",
-    FrontDolbyRight: "FDR",
-    FrontHeightLeft: "FHL",
-    FrontHeightRight: "FHR",
-    RearHeightLeft: "RHL",
-    RearHeightRight: "RHR",
-    SurroundHeightRight: "SHR",
-    SurroundHeightLeft: "SHL",
-    Subwoofer: "SW",
-    SubwooferTwo: "SW2",
-    SubwooferThree: "SW3",
-    SubwooferFour: "SW4",
-    SurroundBackLeft: "SBL",
-    SurroundBackRight: "SBR",
-    SurroundBack: "SB",
-    FrontWideLeft: "FWL",
-    FrontWideRight: "FWR",
-    TopFrontLeft: "TFL",
-    TopFrontRight: "TFR",
-    TopMiddleLeft: "TML",
-    TopMiddleRight: "TMR",
-    TopRearLeft: "TRL",
-    TopRearRight: "TRR",
-    BackDolbyLeft: "BDL",
-    BackDolbyRight: "BDR",
-    TopSurround: "TS",
-    CenterHeight: "CH",
-    TactileTransducer: "TTR"
-  };
-  /**
-   * Maps the channel volume command to last part of state id
-   */
-  CHANNEL_VOLUME_REMAPPING = helper.reverseObject(this.CHANNEL_VOLUME_MAPPINGS);
   zonesCreated = {};
-  pollTimer = null;
-  connectTimer = null;
+  /** Cache of id|value pairs already present in common.states */
+  knownStateValues = /* @__PURE__ */ new Set();
   receiverType;
+  /**
+   * @param options adapter options
+   */
   constructor(options = {}) {
     super({ ...options, name: "denon" });
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("ready", this.onReady.bind(this));
     this.on("message", this.onMessage.bind(this));
     this.on("unload", this.onUnload.bind(this));
-    this.init();
   }
   /**
-   * Initialize the client handlers
+   * Wires the telnet client events to the adapter
+   *
+   * @param client the telnet client
    */
-  init() {
-    this.client.on("timeout", () => {
-      this.pollTimer = null;
-      this.log.warn("AVR timed out due to no response");
-      this.reconnect();
-    });
-    this.client.on("error", (error) => {
-      this.verboseConnection = error.code !== this.previousError;
-      if (this.connectTimer) {
-        return;
-      }
-      this.previousError = error.code;
-      const logLevel = this.verboseConnection ? "warn" : "debug";
-      if (error.code === "ECONNREFUSED") {
-        this.log[logLevel]("Connection refused, make sure that there is no other Telnet connection");
-      } else if (error.code === "EHOSTUNREACH") {
-        this.log[logLevel]("AVR unreachable, check the Network Config of your AVR");
-      } else if (error.code === "EALREADY" || error.code === "EISCONN") {
-        return this.log[logLevel]("Adapter is already connecting/connected");
-      } else if (error.code === "ETIMEDOUT") {
-        this.log[logLevel]("Connection timed out");
-      } else {
-        this.log[logLevel](`Connection closed: ${error}`);
-      }
-      this.reconnect();
-    });
-    this.client.on("end", () => {
-      this.log.warn("Denon AVR has cancelled the connection");
-      this.reconnect();
-    });
-    this.client.on("connect", async () => {
-      this.connectTimer = null;
-      this.previousError = void 0;
-      this.verboseConnection = true;
-      this.setState("info.connection", true, true);
-      this.log.info(`[CONNECT] Adapter connected to DENON-AVR: ${this.avrHost}:23`);
+  attachClientHandlers(client) {
+    client.on("connected", () => {
+      void this.setState("info.connection", true, true);
+      this.log.info(`[CONNECT] Adapter connected to DENON/Marantz AVR: ${this.avrHost}`);
       if (!this.receiverType) {
         this.log.debug("[CONNECT] Connected --> Check receiver type");
-        await this.sendRequests(["SV?", "SV01?", "BDSTATUS?", "MV?"]);
+        void this.sendRequests(["SV?", "SV01?", "BDSTATUS?", "MV?"]);
       } else {
         this.log.debug("[CONNECT] Connected --> updating states on start");
-        this.updateStates();
+        void this.updateStates();
+      }
+      this.schedulePoll();
+    });
+    client.on("disconnected", () => {
+      this.log.debug("[CONNECT] Connection to AVR closed");
+      this.stopPoll();
+      void this.setState("info.connection", false, true);
+    });
+    client.on("connectError", (code, message, repeated) => {
+      void this.setState("info.connection", false, true);
+      const level = repeated ? "debug" : "warn";
+      switch (code) {
+        case "ECONNREFUSED":
+          this.log[level](
+            "Connection refused. The AVR only accepts ONE telnet connection, make sure no other app (Home Assistant, Denon/Marantz app, other adapter) is connected to port 23"
+          );
+          break;
+        case "EHOSTUNREACH":
+        case "ENETUNREACH":
+          this.log[level]("AVR unreachable, check the network config of your AVR");
+          break;
+        case "ETIMEDOUT":
+          this.log[level](
+            'Connection timed out. If the AVR is in standby, set "Network Control" (IP Control) to "Always On"'
+          );
+          break;
+        case "ECONNRESET":
+          this.log[level]("Connection reset by AVR");
+          break;
+        default:
+          this.log[level](`Connection error (${code}): ${message}`);
       }
     });
-    this.client.on("data", (data) => {
-      const dataArr = data.toString().split(/[\r\n]+/);
-      for (const data2 of dataArr) {
-        if (data2) {
-          this.log.debug(`[DATA] <== Incoming data: ${data2}`);
-          this.handleResponse(data2);
-        }
-      }
+    client.on("line", (line) => {
+      this.log.debug(`[DATA] <== Incoming data: ${line}`);
+      this.lineChain = this.lineChain.then(() => this.handleResponse(line)).catch((e) => this.log.warn(`Could not handle "${line}": ${e.message}`));
     });
   }
   /**
    * Is called when adapter shuts down - callback has to be called under any circumstances!
+   *
+   * @param callback callback which has to be called
    */
   onUnload(callback) {
+    var _a;
     try {
-      if (this.connectTimer) {
-        clearTimeout(this.connectTimer);
-      }
-      if (this.pollTimer) {
-        clearTimeout(this.pollTimer);
-      }
+      this.stopPoll();
       this.log.info("[END] Stopping Denon AVR adapter...");
-      this.setState("info.connection", false, true);
-      this.client.destroy();
-      this.client.unref();
+      (_a = this.telnet) == null ? void 0 : _a.stop();
+      void this.setState("info.connection", false, true);
       callback();
     } catch {
       callback();
@@ -337,15 +283,89 @@ class Denon extends utils.Adapter {
    * Is called when databases are connected and adapter received configuration.
    */
   async onReady() {
-    if (this.config.ip) {
-      this.log.info("[START] Starting DENON AVR adapter");
-      this.avrHost = this.config.ip;
-      this.pollInterval = this.config.pollInterval || 7e3;
-      this.requestInterval = this.config.requestInterval || 100;
-      this.subscribeStates("*");
-      this.connect();
-    } else {
-      this.log.warn("No IP-address set");
+    var _a;
+    await this.setState("info.connection", false, true);
+    const host = ((_a = this.config.ip) != null ? _a : "").trim();
+    if (!host) {
+      this.log.warn("No IP address/hostname set, please configure the adapter");
+      return;
+    }
+    this.log.info("[START] Starting DENON/Marantz AVR adapter");
+    this.avrHost = host;
+    this.pollInterval = Math.max(1e3, Number(this.config.pollInterval) || 7e3);
+    const requestInterval = Math.max(50, Number(this.config.requestInterval) || 100);
+    const pattern = await this.getStateAsync("settings.expertReadingPattern");
+    this.updateExpertRegex((pattern == null ? void 0 : pattern.ack) ? pattern.val : null);
+    await this.migrateStateMaps();
+    this.subscribeStates("*");
+    this.telnet = new import_telnet.DenonTelnetClient({
+      host,
+      port: Number(this.config.telnetPort) || 23,
+      minCommandInterval: requestInterval,
+      log: this.log,
+      timers: {
+        setTimeout: (cb, ms) => this.setTimeout(cb, ms),
+        clearTimeout: (handle) => this.clearTimeout(handle),
+        setInterval: (cb, ms) => this.setInterval(cb, ms),
+        clearInterval: (handle) => this.clearInterval(handle)
+      }
+    });
+    this.attachClientHandlers(this.telnet);
+    this.telnet.start();
+  }
+  /**
+   * Compiles and caches the expert reading pattern
+   *
+   * @param val pattern state value
+   */
+  updateExpertRegex(val) {
+    if (typeof val !== "string" || !val) {
+      this.expertRegex = null;
+      return;
+    }
+    try {
+      this.expertRegex = new RegExp(val);
+    } catch {
+      this.expertRegex = null;
+    }
+  }
+  /**
+   * Returns the commands for one poll cycle, only for zones which exist and the matching quick select flavor
+   */
+  getPollCommands() {
+    const cmds = [...this.basePollCommands];
+    const quick = this.quickSelectPrefix ? [this.quickSelectPrefix] : ["QUICK", "SMART"];
+    for (const q of quick) {
+      cmds.push(`MS${q} ?`);
+    }
+    for (const zone of Object.keys(this.zonesCreated)) {
+      cmds.push(`Z${zone}SLP?`);
+      for (const q of quick) {
+        cmds.push(`Z${zone}${q} ?`);
+      }
+    }
+    return cmds;
+  }
+  /**
+   * Polls states which the AVR does not push and reschedules itself. Also acts as additional keepalive.
+   */
+  schedulePoll() {
+    this.stopPoll();
+    this.pollTimer = this.setTimeout(async () => {
+      var _a;
+      this.pollTimer = void 0;
+      if ((_a = this.telnet) == null ? void 0 : _a.connected) {
+        if (this.telnet.queueLength < 5) {
+          await this.sendRequests(this.getPollCommands());
+        }
+        this.schedulePoll();
+      }
+    }, this.pollInterval);
+  }
+  stopPoll() {
+    if (this.pollTimer) {
+      this.clearTimeout(this.pollTimer);
+      this.pollTimer = void 0;
     }
   }
   /**
@@ -353,32 +373,33 @@ class Denon extends utils.Adapter {
    *
    * @param obj the received message
    */
-  async onMessage(obj) {
-    if (typeof obj === "object") {
-      if (obj.command === "browse") {
-        if (obj.callback) {
-          this.log.info("start browse");
-          (0, import_upnp.ssdpScan)(
-            'M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: ssdp:all\r\nMAN: "ssdp:discover"\r\nMX: 3\r\n\r\n',
-            true,
-            4e3,
-            (err, result) => {
-              if (result) {
-                result = result.filter(
-                  (dev) => dev.manufacturer && (dev.manufacturer.toLowerCase() === "marantz" || dev.manufacturer.toLowerCase() === "denon")
-                ).map((dev) => {
-                  return { ip: dev.ip, name: dev.name };
-                });
-              }
-              this.sendTo(obj.from, obj.command, { error: err, list: result }, obj.callback);
-            }
-          );
-        }
-      }
+  onMessage(obj) {
+    if (typeof obj !== "object" || obj.command !== "browse" || !obj.callback) {
+      return;
     }
+    this.log.info("[DISCOVERY] Searching for Denon/Marantz AVRs via SSDP");
+    (0, import_upnp.ssdpScan)(
+      'M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: ssdp:all\r\nMAN: "ssdp:discover"\r\nMX: 3\r\n\r\n',
+      true,
+      4e3,
+      (err, result) => {
+        const devices = (result != null ? result : []).filter((dev) => {
+          var _a;
+          return /^(denon|marantz)$/i.test((_a = dev.manufacturer) != null ? _a : "");
+        }).map((dev) => ({ label: `${dev.ip} - ${dev.name}`, value: dev.ip }));
+        if (err) {
+          this.log.warn(`[DISCOVERY] Search failed: ${String(err)}`);
+        }
+        this.log.info(`[DISCOVERY] Found ${devices.length} device(s)`);
+        this.sendTo(obj.from, obj.command, devices, obj.callback);
+      }
+    );
   }
   /**
    * Is called if a subscribed state changes
+   *
+   * @param id full state id
+   * @param state new state, null if deleted
    */
   async onStateChange(id, state) {
     if (!id || !state || state.ack || state.val === null) {
@@ -398,8 +419,12 @@ class Denon extends utils.Adapter {
     const channelVolStartsWith = "zoneMain.channelVolume";
     if (id.startsWith(channelVolStartsWith)) {
       const channel = id.substring(channelVolStartsWith.length);
-      const command = this.CHANNEL_VOLUME_MAPPINGS[channel];
-      await this.sendRequest(`CV${command} ${helper.dbToVol(stateVal)}`);
+      const command = protocol.CHANNEL_VOLUME_MAPPINGS[channel];
+      if (!command) {
+        this.log.warn(`[COMMAND] Unknown channel volume state ${id}`);
+        return;
+      }
+      await this.sendRequest(`CV${command} ${protocol.dbToLevel(stateVal)}`);
       return;
     }
     switch (id) {
@@ -411,29 +436,27 @@ class Denon extends utils.Adapter {
         }
         break;
       case "zoneMain.volume": {
-        const vol = helper.inputToVol(stateVal);
+        const vol = protocol.formatVolume(stateVal);
         await this.sendRequest(`MV${vol}`);
         this.log.debug(`[INFO] <== Changed mainVolume to ${vol}`);
         break;
       }
       case "zoneMain.volumeDB": {
         stateVal += 80;
-        const vol = helper.inputToVol(stateVal);
+        const vol = protocol.formatVolume(stateVal);
         await this.sendRequest(`MV${vol}`);
         this.log.debug(`[INFO] <== Changed mainVolume to ${vol}`);
         break;
       }
-      case "zoneMain.sleepTimer":
-        if (!stateVal) {
-          await this.sendRequest("SLPOFF");
-        } else if (stateVal < 10) {
-          await this.sendRequest(`SLP00${stateVal}`);
-        } else if (stateVal < 100) {
-          await this.sendRequest(`SLP0${stateVal}`);
-        } else if (stateVal <= 120) {
-          await this.sendRequest(`SLP${stateVal}`);
+      case "zoneMain.sleepTimer": {
+        const slp = protocol.formatSleepTimer(Number(stateVal));
+        if (slp) {
+          await this.sendRequest(`SLP${slp}`);
+        } else {
+          this.log.warn(`[COMMAND] Sleep timer must be between 0 and 120 minutes, got ${stateVal}`);
         }
         break;
+      }
       case "zoneMain.volumeUp":
         await this.sendRequest("MVUP");
         break;
@@ -464,11 +487,11 @@ class Denon extends utils.Adapter {
         break;
       case "zoneMain.selectInput": {
         const obj = await this.getObjectAsync("zoneMain.selectInput");
-        await this.sendRequest(`SI${helper.decodeState(obj.common.states, state.val).toUpperCase()}`);
+        await this.sendKeyed("SI", obj, state.val, id);
         break;
       }
       case "zoneMain.quickSelect":
-        await this.sendRequests([`MSQUICK${stateVal}`, `MSSMART${stateVal}`]);
+        await this.sendRequests(this.quickSelectCommands("MS", stateVal), "high");
         break;
       case "zoneMain.equalizerBassUp":
         await this.sendRequest("PSBAS UP");
@@ -483,11 +506,11 @@ class Denon extends utils.Adapter {
         await this.sendRequest("PSTRE DOWN");
         break;
       case "zoneMain.equalizerBass":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`PSBAS ${stateVal}`);
         break;
       case "zoneMain.equalizerTreble":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`PSTRE ${stateVal}`);
         break;
       case "settings.powerSystem":
@@ -505,7 +528,7 @@ class Denon extends utils.Adapter {
         }
         break;
       case "settings.subwooferLevel":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`PSSWL ${stateVal}`);
         break;
       case "settings.subwooferLevelDown":
@@ -522,7 +545,7 @@ class Denon extends utils.Adapter {
         }
         break;
       case "settings.subwooferTwoLevel":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`PSSWL2 ${stateVal}`);
         break;
       case "settings.subwooferTwoLevelDown":
@@ -549,16 +572,12 @@ class Denon extends utils.Adapter {
         break;
       case "settings.multEq": {
         const obj = await this.getObjectAsync("settings.multEq");
-        await this.sendRequest(
-          `PSMULTEQ:${helper.decodeState(obj.common.states, state.val).toUpperCase()}`
-        );
+        await this.sendKeyed("PSMULTEQ:", obj, state.val, id);
         break;
       }
       case "settings.dynamicVolume": {
         const obj = await this.getObjectAsync("settings.dynamicVolume");
-        await this.sendRequest(
-          `PSDYNVOL ${helper.decodeState(obj.common.states, state.val).toUpperCase()}`
-        );
+        await this.sendKeyed("PSDYNVOL ", obj, state.val, id);
         break;
       }
       case "settings.referenceLevelOffset":
@@ -566,13 +585,14 @@ class Denon extends utils.Adapter {
         break;
       case "settings.surroundMode": {
         const obj = await this.getObjectAsync("settings.surroundMode");
-        await this.sendRequest(`MS${helper.decodeState(obj.common.states, state.val).toUpperCase()}`);
+        await this.sendKeyed("MS", obj, state.val, id);
         break;
       }
       case "settings.expertReadingPattern":
         try {
           new RegExp(stateVal);
-          await this.setStateAsync("settings.expertReadingPattern", stateVal, true);
+          await this.setState("settings.expertReadingPattern", stateVal, true);
+          this.updateExpertRegex(stateVal);
         } catch (e) {
           this.log.warn(`[COMMAND] Cannot update expert reading pattern: ${e.message}`);
         }
@@ -581,7 +601,7 @@ class Denon extends utils.Adapter {
         await this.sendRequest(stateVal);
         const connectionState = await this.getStateAsync("info.connection");
         if ((connectionState == null ? void 0 : connectionState.val) === true) {
-          this.setState("settings.expertCommand", stateVal, true);
+          await this.setState("settings.expertCommand", stateVal, true);
         }
         break;
       }
@@ -637,12 +657,14 @@ class Denon extends utils.Adapter {
         break;
       case "settings.videoProcessingMode": {
         const obj = await this.getObjectAsync("settings.videoProcessingMode");
-        await this.sendRequest(`VSVPM${helper.decodeState(obj.common.states, stateVal)}`);
+        await this.sendKeyed("VSVPM", obj, state.val, id);
         break;
       }
-      case "settings.pictureMode":
-        await this.sendRequest(`PV${stateVal}`);
+      case "settings.pictureMode": {
+        const obj = await this.getObjectAsync("settings.pictureMode");
+        await this.sendKeyed("PV", obj, state.val, id);
         break;
+      }
       case "settings.loadPreset": {
         let loadPresetState;
         if (parseInt(stateVal) < 10) {
@@ -665,9 +687,7 @@ class Denon extends utils.Adapter {
       }
       case "display.brightness": {
         const obj = await this.getObjectAsync("display.brightness");
-        await this.sendRequest(
-          `DIM ${helper.decodeState(obj.common.states, state.val).toUpperCase().slice(0, 3)}`
-        );
+        await this.sendKeyed("DIM ", obj, state.val, id);
         break;
       }
       case "tuner.frequencyUp":
@@ -685,7 +705,7 @@ class Denon extends utils.Adapter {
           }
         }
         while (strFreq.length < 6) {
-          strFreq = strFreq + "0";
+          strFreq = `${strFreq}0`;
         }
         await this.sendRequest(`TFAN${strFreq}`);
         break;
@@ -704,17 +724,15 @@ class Denon extends utils.Adapter {
           await this.sendRequest(`Z${zoneNumber}MUOFF`);
         }
         break;
-      case "zone.sleepTimer":
-        if (!stateVal) {
-          await this.sendRequest(`Z${zoneNumber}SLPOFF`);
-        } else if (stateVal < 10) {
-          await this.sendRequest(`Z${zoneNumber}SLP00${stateVal}`);
-        } else if (stateVal < 100) {
-          await this.sendRequest(`Z${zoneNumber}SLP0${stateVal}`);
-        } else if (stateVal <= 120) {
-          await this.sendRequest(`Z${zoneNumber}SLP${stateVal}`);
+      case "zone.sleepTimer": {
+        const slp = protocol.formatSleepTimer(Number(stateVal));
+        if (slp) {
+          await this.sendRequest(`Z${zoneNumber}SLP${slp}`);
+        } else {
+          this.log.warn(`[COMMAND] Sleep timer must be between 0 and 120 minutes, got ${stateVal}`);
         }
         break;
+      }
       case "zone.volumeUp":
         await this.sendRequest(`Z${zoneNumber}UP`);
         break;
@@ -722,21 +740,19 @@ class Denon extends utils.Adapter {
         await this.sendRequest(`Z${zoneNumber}DOWN`);
         break;
       case "zone.volume":
-        await this.sendRequest(`Z${zoneNumber}${helper.inputToVol(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
         break;
       case "zone.volumeDB":
         stateVal += 80;
-        await this.sendRequest(`Z${zoneNumber}${helper.inputToVol(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
         break;
       case "zone.selectInput": {
         const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInput`);
-        await this.sendRequest(
-          `Z${zoneNumber}${helper.decodeState(obj.common.states, state.val).toUpperCase()}`
-        );
+        await this.sendKeyed(`Z${zoneNumber}`, obj, state.val, id);
         break;
       }
       case "zone.quickSelect":
-        await this.sendRequests([`Z${zoneNumber}QUICK${stateVal}`, `Z${zoneNumber}SMART${stateVal}`]);
+        await this.sendRequests(this.quickSelectCommands(`Z${zoneNumber}`, stateVal), "high");
         break;
       case "zone.equalizerBassUp":
         await this.sendRequest(`Z${zoneNumber}PSBAS UP`);
@@ -751,18 +767,18 @@ class Denon extends utils.Adapter {
         await this.sendRequest(`Z${zoneNumber}PSTRE DOWN`);
         break;
       case "zone.equalizerBass":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`Z${zoneNumber}PSBAS ${stateVal}`);
         break;
       case "zone.equalizerTreble":
-        stateVal = helper.dbToVol(stateVal);
+        stateVal = protocol.dbToLevel(stateVal);
         await this.sendRequest(`Z${zoneNumber}PSTRE ${stateVal}`);
         break;
       case "zone.channelVolumeFrontLeft":
-        await this.sendRequest(`Z${zoneNumber}CVFL ${helper.dbToVol(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}CVFL ${protocol.dbToLevel(stateVal)}`);
         break;
       case "zone.channelVolumeFrontRight":
-        await this.sendRequest(`Z${zoneNumber}CVFR ${helper.dbToVol(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}CVFR ${protocol.dbToLevel(stateVal)}`);
         break;
       case "settings.lfeAmount":
         await this.sendRequest(`PSLFE ${stateVal < 10 ? `0${stateVal}` : 10}`);
@@ -771,7 +787,7 @@ class Denon extends utils.Adapter {
         await this.sendRequest(`PSDIC 0${stateVal}`);
         break;
       case "settings.dialogLevel":
-        await this.sendRequest(`PSDIL ${helper.dbToVol(stateVal)}`);
+        await this.sendRequest(`PSDIL ${protocol.dbToLevel(stateVal)}`);
         break;
       case "settings.dialogLevelAdjust":
         await this.sendRequest(`PSDIL ${stateVal ? "ON" : "OFF"}`);
@@ -840,29 +856,6 @@ class Denon extends utils.Adapter {
       throw new Error("Unknown receiver type");
     }
   }
-  connect() {
-    this.client.setEncoding("utf8");
-    if (this.verboseConnection) {
-      this.log.info(`[CONNECT] Trying to connect to ${this.avrHost}:23`);
-    } else {
-      this.log.debug(`[CONNECT] Trying to connect to ${this.avrHost}:23`);
-    }
-    this.connectTimer = null;
-    this.client.connect({ port: 23, host: this.avrHost });
-    this.client.setTimeout(35e3);
-  }
-  /**
-   * Reconnect to AVR after 30 seconds
-   */
-  reconnect() {
-    this.pollTimer = null;
-    this.setState("info.connection", false, true);
-    if (!this.connectTimer) {
-      this.client.destroy();
-      this.client.unref();
-      this.connectTimer = setTimeout(() => this.connect(), 3e4);
-    }
-  }
   /**
    * Creates the monitor state objects
    */
@@ -897,11 +890,7 @@ class Denon extends utils.Adapter {
             type: "string",
             write: true,
             read: true,
-            states: {
-              0: "AUTO",
-              1: "GAME",
-              2: "MOVIE"
-            }
+            states: { ...states.VIDEO_PROCESSING_STATES }
           },
           native: {}
         },
@@ -965,7 +954,7 @@ class Denon extends utils.Adapter {
         role: "media.pictureMode",
         type: "string",
         write: true,
-        read: false,
+        read: true,
         states: {
           OFF: "Off",
           STD: "Standard",
@@ -1008,33 +997,62 @@ class Denon extends utils.Adapter {
   async updateStates() {
     await this.sendRequests(this.updateCommands);
   }
-  async pollStates() {
-    this.pollTimer = null;
-    await this.sendRequests(this.pollCommands);
-  }
   /**
-   * Send data array to socket respecting request interval
+   * Queues several commands
    *
    * @param requests array of requests
+   * @param priority 'normal' for bulk updates and polling, 'high' for user actions
    */
-  async sendRequests(requests) {
-    for (const req of requests) {
-      await this.sendRequest(req);
-      await helper.wait(this.requestInterval);
+  async sendRequests(requests, priority = "normal") {
+    if (!this.telnet) {
+      return;
     }
+    await this.telnet.sendMany(requests, priority);
   }
   /**
-   * Send data to socket
+   * Queues a single command. Single commands are user actions, so they get high priority by default.
    *
-   * @param req
+   * @param req command without CR
+   * @param priority command priority
    */
-  sendRequest(req) {
-    return new Promise((resolve) => {
-      this.client.write(`${req}\r`, () => {
-        this.log.debug(`[INFO] ==> Message sent: ${req}`);
-        resolve();
-      });
-    });
+  async sendRequest(req, priority = "high") {
+    if (!this.telnet) {
+      return;
+    }
+    await this.telnet.send(String(req), priority);
+  }
+  /**
+   * Sends prefix + protocol code, the code is resolved from the states map of the object (key or label)
+   *
+   * @param prefix command prefix, e.g. "MS" or "DIM "
+   * @param obj object holding the states map
+   * @param val value written by the user
+   * @param id state id for logging
+   */
+  async sendKeyed(prefix, obj, val, id) {
+    const states2 = (obj == null ? void 0 : obj.common) && "states" in obj.common ? obj.common.states : void 0;
+    const key = helper.resolveStateKey(states2, val);
+    if (!key) {
+      this.log.warn(`[COMMAND] Value "${val}" is not valid for ${id}`);
+      return;
+    }
+    await this.sendRequest(`${prefix}${key.toUpperCase()}`);
+  }
+  /**
+   * Builds the quick select commands for the detected brand. Denon uses QUICK, Marantz SMART.
+   * As long as the brand is unknown both are sent.
+   *
+   * @param prefix "MS" for main zone or "Z2"/"Z3"
+   * @param val quick select number
+   */
+  quickSelectCommands(prefix, val) {
+    const nr = Number(val);
+    if (!Number.isInteger(nr) || nr < 1 || nr > 5) {
+      this.log.warn(`[COMMAND] Quick select must be 1..5, got ${val}`);
+      return [];
+    }
+    const flavors = this.quickSelectPrefix ? [this.quickSelectPrefix] : ["QUICK", "SMART"];
+    return flavors.map((f) => `${prefix}${f}${nr}`);
   }
   async handleUsResponse(data) {
     var _a, _b;
@@ -1044,7 +1062,7 @@ class Denon extends utils.Adapter {
       const bright = data.substring(4);
       for (const j of Object.keys(obj.common.states)) {
         if (helper.decodeState(obj.common.states, j).toLowerCase().includes(bright.toLowerCase())) {
-          this.setState("display.brightness", obj.common.states[j], true);
+          await this.setState("display.brightness", obj.common.states[j], true);
         }
       }
       return;
@@ -1052,13 +1070,13 @@ class Denon extends utils.Adapter {
       const zoneNumber = parseInt(data.slice(2, 4));
       const command = data.substring(4);
       if (command === "CONT") {
-        this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Constant", true);
+        await this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Constant", true);
       } else if (command === "TRIG") {
-        this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Trigger in", true);
+        await this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Trigger in", true);
       } else if (command === "ASIG") {
-        this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Audio signal", true);
+        await this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Audio signal", true);
       } else if (command === "OFF") {
-        this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Off", true);
+        await this.setState(`zone${zoneNumber}.zoneTurnOnModeChange`, "Off", true);
       }
       return;
     } else if (/SV[0-9]+/g.test(data)) {
@@ -1067,19 +1085,19 @@ class Denon extends utils.Adapter {
       const state = await this.getStateAsync(`zone${zoneNumber}.operationMode`);
       if (((_a = state == null ? void 0 : state.val) == null ? void 0 : _a.toString()) === "0" || (state == null ? void 0 : state.val) === "NORMAL") {
         const speaker = parseInt(data.slice(2, 4)) === zoneNumber ? "speakerTwo" : "speakerOne";
-        this.setState(`zone${zoneNumber}.${speaker}Volume`, volume, true);
+        await this.setState(`zone${zoneNumber}.${speaker}Volume`, volume, true);
       } else {
-        this.setState(`zone${zoneNumber}.speakerOneVolume`, volume, true);
-        this.setState(`zone${zoneNumber}.speakerTwoVolume`, volume, true);
+        await this.setState(`zone${zoneNumber}.speakerOneVolume`, volume, true);
+        await this.setState(`zone${zoneNumber}.speakerTwoVolume`, volume, true);
       }
       return;
     } else if (/SO\d\d.+/g.test(data)) {
       const zoneNumber = parseInt(data.slice(2, 4));
       const command = data.substring(4);
       if (command === "NOR") {
-        this.setState(`zone${zoneNumber}.operationMode`, "NORMAL", true);
+        await this.setState(`zone${zoneNumber}.operationMode`, "NORMAL", true);
       } else if (command === "BRI") {
-        this.setState(`zone${zoneNumber}.operationMode`, "BRIDGED", true);
+        await this.setState(`zone${zoneNumber}.operationMode`, "BRIDGED", true);
       }
       return;
     } else if (/SF\d\d.+/g.test(data)) {
@@ -1089,17 +1107,17 @@ class Denon extends utils.Adapter {
       if (((_b = state == null ? void 0 : state.val) == null ? void 0 : _b.toString()) === "0" || (state == null ? void 0 : state.val) === "NORMAL") {
         const speaker = parseInt(data.slice(2, 4)) === zoneNumber ? "SpeakerTwo" : "SpeakerOne";
         if (command === "OFF") {
-          this.setState(`zone${zoneNumber}.lowCutFilter${speaker}`, false, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilter${speaker}`, false, true);
         } else if (command === "ON") {
-          this.setState(`zone${zoneNumber}.lowCutFilter${speaker}`, true, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilter${speaker}`, true, true);
         }
       } else {
         if (command === "ON") {
-          this.setState(`zone${zoneNumber}.lowCutFilterSpeakerOne`, true, true);
-          this.setState(`zone${zoneNumber}.lowCutFilterSpeakerTwo`, true, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilterSpeakerOne`, true, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilterSpeakerTwo`, true, true);
         } else if (command === "OFF") {
-          this.setState(`zone${zoneNumber}.lowCutFilterSpeakerOne`, false, true);
-          this.setState(`zone${zoneNumber}.lowCutFilterSpeakerTwo`, false, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilterSpeakerOne`, false, true);
+          await this.setState(`zone${zoneNumber}.lowCutFilterSpeakerTwo`, false, true);
         }
       }
       return;
@@ -1112,15 +1130,15 @@ class Denon extends utils.Adapter {
         const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInputOne`);
         for (const j of Object.keys(obj.common.states)) {
           if (helper.decodeState(obj.common.states, j).replace(" ", "").toLowerCase().includes(command.toLowerCase())) {
-            this.setState(`zone${zoneNumber}.selectInput${speaker}`, obj.common.states[j], true);
+            await this.setState(`zone${zoneNumber}.selectInput${speaker}`, obj.common.states[j], true);
           }
         }
       } else {
         const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInputOne`);
         for (const j of Object.keys(obj.common.states)) {
           if (helper.decodeState(obj.common.states, j).replace(" ", "").toLowerCase().includes(command.toLowerCase())) {
-            this.setState(`zone${zoneNumber}.selectInputOne`, obj.common.states[j], true);
-            this.setState(`zone${zoneNumber}.selectInputTwo`, obj.common.states[j], true);
+            await this.setState(`zone${zoneNumber}.selectInputOne`, obj.common.states[j], true);
+            await this.setState(`zone${zoneNumber}.selectInputTwo`, obj.common.states[j], true);
           }
         }
       }
@@ -1129,42 +1147,42 @@ class Denon extends utils.Adapter {
       const zoneNumber = parseInt(data.slice(2, 4));
       const command = data.substring(4);
       if (command === "YES") {
-        this.setState(`zone${zoneNumber}.triggerInput`, true, true);
+        await this.setState(`zone${zoneNumber}.triggerInput`, true, true);
       } else if (command === "NO") {
-        this.setState(`zone${zoneNumber}.triggerInput`, false, true);
+        await this.setState(`zone${zoneNumber}.triggerInput`, false, true);
       }
       return;
     } else if (/AI\d\d.+/g.test(data)) {
       const zoneNumber = parseInt(data.slice(2, 4));
       const command = data.substring(4);
       if (command === "YES") {
-        this.setState(`zone${zoneNumber}.audioSignalInput`, true, true);
+        await this.setState(`zone${zoneNumber}.audioSignalInput`, true, true);
       } else if (command === "NO") {
-        this.setState(`zone${zoneNumber}.audioSignalInput`, false, true);
+        await this.setState(`zone${zoneNumber}.audioSignalInput`, false, true);
       }
       return;
     }
     switch (data) {
       case "PW00ON":
-        this.setState("settings.powerSystem", true, true);
+        await this.setState("settings.powerSystem", true, true);
         break;
       case "PW00STANDBY":
-        this.setState("settings.powerSystem", false, true);
+        await this.setState("settings.powerSystem", false, true);
         break;
       case "TI00YES":
-        this.setState("settings.masterTriggerInput", true, true);
+        await this.setState("settings.masterTriggerInput", true, true);
         break;
       case "TI00NO":
-        this.setState("settings.masterTriggerInput", false, true);
+        await this.setState("settings.masterTriggerInput", false, true);
         break;
       case "ST00PBTN":
-        this.setState("powerConfigurationChange", "Power Button", true);
+        await this.setState("powerConfigurationChange", "Power Button", true);
         break;
       case "ST00TRIG":
-        this.setState("powerConfigurationChange", "Master Trigger", true);
+        await this.setState("powerConfigurationChange", "Master Trigger", true);
         break;
       case "ST00ONLI":
-        this.setState("powerConfigurationChange", "On Line", true);
+        await this.setState("powerConfigurationChange", "On Line", true);
         break;
       default:
         this.log.debug(`[INFO] <== Unhandled US command ${data}`);
@@ -1172,6 +1190,7 @@ class Denon extends utils.Adapter {
   }
   /**
    * Handle state change for US receiver
+   *
    * @param id state id
    * @param stateVal state value
    */
@@ -1194,7 +1213,8 @@ class Denon extends utils.Adapter {
       case "settings.expertReadingPattern":
         try {
           new RegExp(stateVal);
-          await this.setStateAsync("settings.expertReadingPattern", stateVal, true);
+          await this.setState("settings.expertReadingPattern", stateVal, true);
+          this.updateExpertRegex(stateVal);
         } catch (e) {
           this.log.warn(`[COMMAND] Cannot update expert reading pattern: ${e.message}`);
         }
@@ -1210,7 +1230,7 @@ class Denon extends utils.Adapter {
         await this.sendRequest(stateVal);
         const state = await this.getStateAsync("info.connection");
         if ((state == null ? void 0 : state.val) === true) {
-          this.setState("settings.expertCommand", stateVal, true);
+          await this.setState("settings.expertCommand", stateVal, true);
         }
         break;
       }
@@ -1282,13 +1302,13 @@ class Denon extends utils.Adapter {
           const calculatedZoneNumber = parseInt(zoneNumber) % 2 ? parseInt(zoneNumber) : parseInt(zoneNumber) - 1;
           zoneNumber = calculatedZoneNumber < 10 ? `0${calculatedZoneNumber}` : calculatedZoneNumber.toString();
         }
-        const vol = helper.inputToVol(stateVal);
+        const vol = protocol.formatVolume(stateVal);
         await this.sendRequest(`SV${zoneNumber}${vol}`);
         this.log.debug(`[INFO] <== Changed speakerOneVolume to ${vol}`);
         break;
       }
       case "speakerTwoVolume": {
-        const vol = helper.inputToVol(stateVal);
+        const vol = protocol.formatVolume(stateVal);
         await this.sendRequest(`SV${zoneNumber}${vol}`);
         this.log.debug(`[INFO] <== Changed speakerTwoVolume to ${vol}`);
         break;
@@ -1316,25 +1336,113 @@ class Denon extends utils.Adapter {
     }
   }
   /**
+   * Handles responses which are identified by their prefix. These must not go through the legacy
+   * "remove all digits and spaces" command detection, because their parameters contain digits.
+   *
+   * @param data single protocol line
+   * @returns true if the line was handled
+   */
+  async handlePrefixedResponse(data) {
+    if (data.startsWith("CV")) {
+      const cv = protocol.parseChannelVolume(data);
+      if (!cv) {
+        this.log.debug(`[INFO] <== Unknown channel volume format: ${data}`);
+      } else if (cv.type === "level") {
+        if (cv.stateSuffix) {
+          await this.setState(`zoneMain.channelVolume${cv.stateSuffix}`, cv.db, true);
+        } else {
+          this.log.debug(`[INFO] <== Unknown channel volume channel: ${cv.channelCode}`);
+        }
+      }
+      return true;
+    }
+    if (/^NS[EA](\d|$)/.test(data)) {
+      const line = protocol.parseDisplayLine(data);
+      if (!line) {
+        return true;
+      }
+      if (!this.capabilities.display) {
+        await this.createDisplayAndHttp();
+      }
+      await this.setState(`display.displayContent${line.index}`, line.text, true);
+      return true;
+    }
+    if (data.startsWith("DIM")) {
+      const code = protocol.paramOf(data, "DIM");
+      if (code) {
+        await this.ensureAttrInStates("display.brightness", code);
+        await this.setState("display.brightness", code, true);
+      }
+      return true;
+    }
+    if (data.startsWith("VSVPM")) {
+      const code = protocol.paramOf(data, "VSVPM");
+      if (code) {
+        if (!this.capabilities.multiMonitor) {
+          await this.createMonitorState();
+        }
+        await this.ensureAttrInStates("settings.videoProcessingMode", code);
+        await this.setState("settings.videoProcessingMode", code, true);
+      }
+      return true;
+    }
+    const pv = /^PV([A-Z]{3})$/.exec(data);
+    if (pv) {
+      if (!this.capabilities.pictureMode) {
+        await this.createPictureMode();
+      }
+      await this.ensureAttrInStates("settings.pictureMode", pv[1]);
+      await this.setState("settings.pictureMode", pv[1], true);
+      return true;
+    }
+    const quick = /^MS(QUICK|SMART)(\d)/.exec(data);
+    if (quick) {
+      this.rememberQuickSelectFlavor(quick[1]);
+      await this.setStateChangedAsync("zoneMain.quickSelect", parseInt(quick[2], 10), true);
+      return true;
+    }
+    if (data.startsWith("MS")) {
+      const mode = data.substring(2).trim();
+      if (mode) {
+        await this.ensureAttrInStates("settings.surroundMode", mode);
+        await this.setState("settings.surroundMode", mode, true);
+      }
+      return true;
+    }
+    if (/^(SSINF|STBY|ECO|PSDRC|DC|SD|OPV|SY|TR)/.test(data)) {
+      this.log.debug(`[INFO] <== Not (yet) mapped: ${data}`);
+      return true;
+    }
+    return false;
+  }
+  /**
+   * Stores whether the AVR uses QUICK (Denon) or SMART (Marantz) select commands
+   *
+   * @param flavor the flavor seen in a response
+   */
+  rememberQuickSelectFlavor(flavor) {
+    if (this.quickSelectPrefix !== flavor) {
+      this.quickSelectPrefix = flavor;
+      this.log.debug(`[INFO] Quick select flavor detected: ${flavor}`);
+    }
+  }
+  /**
    * Handle single response from AVR
    *
    * @param data single data line
    */
   async handleResponse(data) {
-    if (!this.pollTimer) {
-      this.pollTimer = setTimeout(() => this.pollStates(), this.pollInterval);
-    }
-    const expertPattern = await this.getStateAsync("settings.expertReadingPattern");
-    if ((expertPattern == null ? void 0 : expertPattern.val) && expertPattern.ack) {
-      const expertRegex = new RegExp(expertPattern.val);
-      if (expertRegex.test(data)) {
-        this.setState("settings.expertReadingResult", data, true);
-      }
+    var _a;
+    if ((_a = this.expertRegex) == null ? void 0 : _a.test(data)) {
+      await this.setState("settings.expertReadingResult", data, true);
     }
     if (!this.receiverType) {
       return this.determineReceiverType(data);
     } else if (this.receiverType === "US") {
       return this.handleUsResponse(data);
+    }
+    if (await this.handlePrefixedResponse(data)) {
+      return;
     }
     let command;
     if (/^Z\d.*/g.test(data)) {
@@ -1346,14 +1454,15 @@ class Denon extends utils.Adapter {
       if (command === "Z") {
         let vol = data.substring(2).replace(/\s|[A-Z]/g, "");
         vol = `${vol.slice(0, 2)}.${vol.slice(2, 4)}`;
-        this.setState(`zone${zoneNumber2}.volume`, parseFloat(vol), true);
-        this.setState(`zone${zoneNumber2}.volumeDB`, parseFloat(vol) - 80, true);
+        await this.setState(`zone${zoneNumber2}.volume`, parseFloat(vol), true);
+        await this.setState(`zone${zoneNumber2}.volumeDB`, parseFloat(vol) - 80, true);
         return;
-      } else {
-        command = `Z${zoneNumber2}${command.slice(1, command.length)}`;
       }
-      if (/^Z\dQUICK.*/g.test(data) || /^Z\dSMART.*/g.test(data)) {
-        const quickNr = parseInt(data.slice(-1));
+      command = `Z${zoneNumber2}${command.slice(1, command.length)}`;
+      const zoneQuick = /^Z\d(QUICK|SMART)(\d)/.exec(data);
+      if (zoneQuick) {
+        this.rememberQuickSelectFlavor(zoneQuick[1]);
+        const quickNr = parseInt(zoneQuick[2], 10);
         try {
           const state = await this.getStateAsync(`zone${zoneNumber2}.quickSelect`);
           if ((state == null ? void 0 : state.val) === quickNr && state.ack) {
@@ -1361,7 +1470,7 @@ class Denon extends utils.Adapter {
           }
         } catch {
         }
-        this.setState(`zone${zoneNumber2}.quickSelect`, quickNr, true);
+        await this.setState(`zone${zoneNumber2}.quickSelect`, quickNr, true);
         return;
       } else if (/^Z\d.*/g.test(command)) {
         const obj = await this.getObjectAsync("zoneMain.selectInput");
@@ -1369,8 +1478,8 @@ class Denon extends utils.Adapter {
         zoneSi = zoneSi.replace(" ", "");
         for (const j of Object.keys(obj.common.states)) {
           if (helper.decodeState(obj.common.states, j.toString()) === zoneSi) {
-            this.ensureAttrInStates(`zone${zoneNumber2}.selectInput`, zoneSi);
-            this.setState(`zone${zoneNumber2}.selectInput`, zoneSi, true);
+            await this.ensureAttrInStates(`zone${zoneNumber2}.selectInput`, zoneSi);
+            await this.setState(`zone${zoneNumber2}.selectInput`, zoneSi, true);
             return;
           }
         }
@@ -1378,47 +1487,11 @@ class Denon extends utils.Adapter {
     } else {
       command = data.replace(/\s+|\d+/g, "");
     }
-    if (command.startsWith("DIM")) {
-      const obj = await this.getObjectAsync("display.brightness");
-      const bright = data.substring(4);
-      for (const j of Object.keys(obj.common.states)) {
-        if (helper.decodeState(obj.common.states, j).toLowerCase().includes(bright.toLowerCase())) {
-          this.setState("display.brightness", obj.common.states[j], true);
-        }
-      }
-      return;
-    }
     if (command.startsWith("SI")) {
       let siCommand = data.substring(2);
       siCommand = siCommand.replace(" ", "");
-      this.ensureAttrInStates("zoneMain.selectInput", siCommand);
-      this.setState("zoneMain.selectInput", siCommand, true);
-      return;
-    }
-    if (command.startsWith("MS") && command !== "MSQUICK" && command !== "MSSMART") {
-      const msCommand = data.substring(2);
-      this.setState("settings.surroundMode", msCommand, true);
-      return;
-    }
-    if (command === "MSQUICK" || command === "MSSMART") {
-      const quickNr = parseInt(data.slice(-1));
-      const state = await this.getStateAsync("zoneMain.quickSelect");
-      if ((state == null ? void 0 : state.val) === quickNr && (state == null ? void 0 : state.ack)) {
-        return;
-      }
-      this.setState("zoneMain.quickSelect", quickNr, true);
-      return;
-    }
-    if (command.startsWith("NSE") && !command.startsWith("NSET")) {
-      if (command === "NSE") {
-        return;
-      }
-      const displayCont = (data.includes("\0") ? data.substring(4, data.indexOf("\0")) : data.substring(4)).replace(/[\x00-\x1f]/g, "");
-      const dispContNr = data.slice(3, 4);
-      if (!this.capabilities.display) {
-        await this.createDisplayAndHttp();
-      }
-      this.setState(`display.displayContent${dispContNr}`, displayCont, true);
+      await this.ensureAttrInStates("zoneMain.selectInput", siCommand);
+      await this.setState("zoneMain.selectInput", siCommand, true);
       return;
     }
     if (command.startsWith("NSET")) {
@@ -1428,17 +1501,17 @@ class Denon extends utils.Adapter {
       return;
     }
     if (command.startsWith("NSFRN")) {
-      this.setState("info.friendlyName", data.substring(6), true);
+      await this.setState("info.friendlyName", data.substring(6), true);
       return;
     }
     if (command.startsWith("PSMULTEQ")) {
       const state = data.split(":")[1];
-      this.setState("settings.multEq", state, true);
+      await this.setState("settings.multEq", state, true);
       return;
     }
     if (command.startsWith("PSDYNVOL")) {
       const state = data.split(" ")[1];
-      this.setState("settings.dynamicVolume", state, true);
+      await this.setState("settings.dynamicVolume", state, true);
       return;
     }
     if (command.startsWith("VSMONI")) {
@@ -1447,30 +1520,9 @@ class Denon extends utils.Adapter {
         await this.createMonitorState();
       }
       if (state === "AUTO") {
-        this.setState("settings.outputMonitor", 0, true);
+        await this.setState("settings.outputMonitor", 0, true);
       } else {
-        this.setState("settings.outputMonitor", parseInt(state), true);
-      }
-      return;
-    }
-    if (command.startsWith("VSVPM")) {
-      const processingMode = data.substring(4);
-      if (!this.capabilities.multiMonitor) {
-        await this.createMonitorState();
-      }
-      this.setState("settings.videoProcessingMode", processingMode, true);
-      return;
-    }
-    if (command.startsWith("PV") && command.length > 2) {
-      const pictureMode = data.substring(1);
-      if (!this.capabilities.pictureMode) {
-        await this.createPictureMode();
-      }
-      const obj = await this.getObjectAsync("settings.pictureMode");
-      if ((obj == null ? void 0 : obj.common.states) && pictureMode in obj.common.states) {
-        this.setState("settings.pictureMode", obj.common.states[pictureMode], true);
-      } else {
-        this.log.debug(`Unknown picture mode: "${pictureMode}"`);
+        await this.setState("settings.outputMonitor", parseInt(state), true);
       }
       return;
     }
@@ -1489,28 +1541,17 @@ class Denon extends utils.Adapter {
       };
       const sortedPresets = [];
       Object.keys(knownPresets).sort().forEach((key) => sortedPresets[key] = knownPresets[key]);
-      this.setState("info.onlinePresets", JSON.stringify(sortedPresets), true);
+      await this.setState("info.onlinePresets", JSON.stringify(sortedPresets), true);
       return;
     }
     if (command.startsWith("TFANNAME")) {
       const stationName = data.substring(8);
-      this.setState("tuner.stationName", stationName, true);
+      await this.setState("tuner.stationName", stationName, true);
       return;
     }
     if (command === "TFAN") {
       const freq = parseFloat(`${data.substring(4, 8)}.${data.substring(8)}`);
-      this.setState("tuner.frequency", freq, true);
-      return;
-    }
-    if (command.startsWith("CV")) {
-      const cvCmd = command.split(" ")[0].substring(2);
-      const channel = this.CHANNEL_VOLUME_REMAPPING[cvCmd];
-      if (!channel) {
-        this.log.debug(`Unknown channel volume received: ${channel}`);
-        return;
-      }
-      const channelVolume = data.split(" ")[1];
-      this.setState(`zoneMain.channelVolume${channel}`, helper.volToDb(channelVolume), true);
+      await this.setState("tuner.frequency", freq, true);
       return;
     }
     let zoneNumber = "";
@@ -1521,44 +1562,44 @@ class Denon extends utils.Adapter {
     this.log.debug(`[INFO] <== Command to handle is ${command}`);
     switch (command) {
       case "PWON":
-        this.setState("settings.powerSystem", true, true);
+        await this.setState("settings.powerSystem", true, true);
         break;
       case "PWSTANDBY":
-        this.setState("settings.powerSystem", false, true);
+        await this.setState("settings.powerSystem", false, true);
         break;
       case "MV":
         data = `${data.slice(2, 4)}.${data.slice(4, 5)}`;
-        this.setState("zoneMain.volume", parseFloat(data), true);
-        this.setState("zoneMain.volumeDB", parseFloat(data) - 80, true);
+        await this.setState("zoneMain.volume", parseFloat(data), true);
+        await this.setState("zoneMain.volumeDB", parseFloat(data) - 80, true);
         break;
       case "MVMAX":
         data = `${data.slice(6, 8)}.${data.slice(8, 9)}`;
-        this.setState("zoneMain.maximumVolume", parseFloat(data), true);
-        this.setState("zoneMain.maximumVolumeDB", parseFloat(data) - 80, true);
+        await this.setState("zoneMain.maximumVolume", parseFloat(data), true);
+        await this.setState("zoneMain.maximumVolumeDB", parseFloat(data) - 80, true);
         break;
       case "MUON":
-        this.setState("zoneMain.muteIndicator", true, true);
+        await this.setState("zoneMain.muteIndicator", true, true);
         break;
       case "MUOFF":
-        this.setState("zoneMain.muteIndicator", false, true);
+        await this.setState("zoneMain.muteIndicator", false, true);
         break;
       case "ZON":
-        this.setState(`zone${zoneNumber}.powerZone`, true, true);
+        await this.setState(`zone${zoneNumber}.powerZone`, true, true);
         break;
       case "ZOFF":
-        this.setState(`zone${zoneNumber}.powerZone`, false, true);
+        await this.setState(`zone${zoneNumber}.powerZone`, false, true);
         break;
       case "ZMUON":
-        this.setState(`zone${zoneNumber}.muteIndicator`, true, true);
+        await this.setState(`zone${zoneNumber}.muteIndicator`, true, true);
         break;
       case "ZMUOFF":
-        this.setState(`zone${zoneNumber}.muteIndicator`, false, true);
+        await this.setState(`zone${zoneNumber}.muteIndicator`, false, true);
         break;
       case "ZMON":
-        this.setState("zoneMain.powerZone", true, true);
+        await this.setState("zoneMain.powerZone", true, true);
         break;
       case "ZMOFF":
-        this.setState("zoneMain.powerZone", false, true);
+        await this.setState("zoneMain.powerZone", false, true);
         break;
       case "SLP": {
         data = data.slice(3, data.length);
@@ -1566,42 +1607,42 @@ class Denon extends utils.Adapter {
         if ((state == null ? void 0 : state.val) === parseInt(data) && (state == null ? void 0 : state.ack)) {
           return;
         }
-        this.setState("zoneMain.sleepTimer", parseFloat(data), true);
+        await this.setState("zoneMain.sleepTimer", parseFloat(data), true);
         break;
       }
       case "SLPOFF": {
-        this.setStateChanged("zoneMain.sleepTimer", 0, true);
+        await this.setStateChangedAsync("zoneMain.sleepTimer", 0, true);
         break;
       }
       case "ZSLP":
         data = data.slice(5, data.length);
-        this.setStateChanged(`zone${zoneNumber}.sleepTimer`, parseFloat(data), true);
+        await this.setStateChangedAsync(`zone${zoneNumber}.sleepTimer`, parseFloat(data), true);
         break;
       case "ZSLPOFF":
-        this.setStateChanged(`zone${zoneNumber}.sleepTimer`, 0, true);
+        await this.setStateChangedAsync(`zone${zoneNumber}.sleepTimer`, 0, true);
         break;
       case "PSDYNEQON":
-        this.setState("settings.dynamicEq", true, true);
+        await this.setState("settings.dynamicEq", true, true);
         break;
       case "PSDYNEQOFF":
-        this.setState("settings.dynamicEq", false, true);
+        await this.setState("settings.dynamicEq", false, true);
         break;
       case "PSSWLON":
-        this.setState("settings.subwooferLevelState", true, true);
+        await this.setState("settings.subwooferLevelState", true, true);
         break;
       case "PSSWLOFF":
-        this.setState("settings.subwooferLevelState", false, true);
+        await this.setState("settings.subwooferLevelState", false, true);
         break;
       case "PSSWL": {
         command = data.split(" ")[0];
         const volDb = helper.volToDb(data.split(" ")[1]);
         if (command === "PSSWL") {
-          this.setState("settings.subwooferLevel", volDb, true);
+          await this.setState("settings.subwooferLevel", volDb, true);
         } else {
           if (!this.capabilities.subTwo) {
             await this.createSubTwo();
           }
-          this.setState("settings.subwooferTwoLevel", volDb, true);
+          await this.setState("settings.subwooferTwoLevel", volDb, true);
         }
         break;
       }
@@ -1609,96 +1650,96 @@ class Denon extends utils.Adapter {
         if (!this.capabilities.audysseyLfc) {
           await this.createLfcAudyssey();
         }
-        this.setState("settings.audysseyLfc", true, true);
+        await this.setState("settings.audysseyLfc", true, true);
         break;
       case "PSLFCOFF":
         if (!this.capabilities.audysseyLfc) {
           await this.createLfcAudyssey();
         }
-        this.setState("settings.audysseyLfc", false, true);
+        await this.setState("settings.audysseyLfc", false, true);
         break;
       case "PSCNTAMT": {
         const state = data.split(" ")[1];
         if (!this.capabilities.audysseyLfc) {
           await this.createLfcAudyssey();
         }
-        this.setState("settings.containmentAmount", parseFloat(state), true);
+        await this.setState("settings.containmentAmount", parseFloat(state), true);
         break;
       }
       case "PSREFLEV": {
         const state = data.split(" ")[1];
-        this.setState("settings.referenceLevelOffset", state, true);
+        await this.setState("settings.referenceLevelOffset", state, true);
         break;
       }
       case "PSBAS": {
         const volDb = helper.volToDb(data.split(" ")[1]);
-        this.setState("zoneMain.equalizerBass", volDb, true);
+        await this.setState("zoneMain.equalizerBass", volDb, true);
         break;
       }
       case "PSTRE": {
         const volDb = helper.volToDb(data.split(" ")[1]);
-        this.setState("zoneMain.equalizerTreble", volDb, true);
+        await this.setState("zoneMain.equalizerTreble", volDb, true);
         break;
       }
       case "ZPSTRE": {
         const volDb = helper.volToDb(data.split(" ")[1]);
-        this.setState(`zone${zoneNumber}.equalizerTreble`, volDb, true);
+        await this.setState(`zone${zoneNumber}.equalizerTreble`, volDb, true);
         break;
       }
       case "ZPSBAS": {
         const volDb = helper.volToDb(data.split(" ")[1]);
-        this.setState(`zone${zoneNumber}.equalizerBass`, volDb, true);
+        await this.setState(`zone${zoneNumber}.equalizerBass`, volDb, true);
         break;
       }
       case "ZCVFL": {
         const channelVolume = data.split(" ")[1];
-        this.setState(`zone${zoneNumber}.channelVolumeFrontLeft`, helper.volToDb(channelVolume), true);
+        await this.setState(`zone${zoneNumber}.channelVolumeFrontLeft`, helper.volToDb(channelVolume), true);
         break;
       }
       case "ZCVFR": {
         const channelVolume = data.split(" ")[1];
-        this.setState(`zone${zoneNumber}.channelVolumeFrontRight`, helper.volToDb(channelVolume), true);
+        await this.setState(`zone${zoneNumber}.channelVolumeFrontRight`, helper.volToDb(channelVolume), true);
         break;
       }
       case "PSTONECTRLON":
-        this.setState("settings.toneControl", true, true);
+        await this.setState("settings.toneControl", true, true);
         break;
       case "PSTONECTRLOFF":
-        this.setState("settings.toneControl", false, true);
+        await this.setState("settings.toneControl", false, true);
         break;
       case "MNMENON":
-        this.setState("settings.setupMenu", true, true);
+        await this.setState("settings.setupMenu", true, true);
         break;
       case "MNMENOFF":
-        this.setState("settings.setupMenu", false, true);
+        await this.setState("settings.setupMenu", false, true);
         break;
       case "PSCESON":
-        this.setState("settings.centerSpread", true, true);
+        await this.setState("settings.centerSpread", true, true);
         break;
       case "PSCESOFF":
-        this.setState("settings.centerSpread", false, true);
+        await this.setState("settings.centerSpread", false, true);
         break;
       case "PSDRCOFF":
         break;
       case "PSLFE": {
         const lfeAmount = parseInt(data.split(" ")[1]);
-        this.setState("settings.lfeAmount", lfeAmount, true);
+        await this.setState("settings.lfeAmount", lfeAmount, true);
         break;
       }
       case "PSDILON":
-        this.setState("settings.dialogLevelAdjust", true, true);
+        await this.setState("settings.dialogLevelAdjust", true, true);
         break;
       case "PSDILOFF":
-        this.setState("settings.dialogLevelAdjust", false, true);
+        await this.setState("settings.dialogLevelAdjust", false, true);
         break;
       case "PSDIL": {
         const level = data.split(" ")[1];
-        this.setState("settings.dialogLevel", helper.volToDb(level), true);
+        await this.setState("settings.dialogLevel", helper.volToDb(level), true);
         break;
       }
       case "PSDIC": {
         const level = parseInt(data.split(" ")[1]);
-        this.setState("settings.dialogControl", level, true);
+        await this.setState("settings.dialogControl", level, true);
         break;
       }
       case "SPPR": {
@@ -1706,7 +1747,7 @@ class Denon extends utils.Adapter {
           await this.createSpeakerPreset();
         }
         const preset = parseInt(data.split(" ")[1]);
-        this.setState("settings.speakerPreset", preset, true);
+        await this.setState("settings.speakerPreset", preset, true);
         break;
       }
       default:
@@ -1725,20 +1766,18 @@ class Denon extends utils.Adapter {
         await this.createStandardStates("US");
         this.log.debug("[UPDATE] Updating states");
         return void this.updateStates();
-      } else {
-        this.receiverType = "DE";
-        await this.createStandardStates("DE");
-        this.log.debug("[UPDATE] Updating states");
-        return void this.updateStates();
       }
+      this.receiverType = "DE";
+      await this.createStandardStates("DE");
+      this.log.debug("[UPDATE] Updating states");
+      return void this.updateStates();
     } else if (data.startsWith("BDSTATUS")) {
       this.receiverType = "DE";
       await this.createStandardStates("DE");
       this.log.debug("[UPDATE] Updating states");
       return void this.updateStates();
-    } else {
-      return;
     }
+    return;
   }
   /**
    * Create all zone specific objects for given zone
@@ -1772,7 +1811,7 @@ class Denon extends utils.Adapter {
     try {
       await Promise.all(promises);
       if (!this.capabilities.display) {
-        this.setState("zoneMain.iconURL", `http://${this.avrHost}/NetAudio/art.asp-jpg`, true);
+        await this.setState("zoneMain.iconURL", `http://${this.avrHost}/NetAudio/art.asp-jpg`, true);
         this.log.debug("[INFO] <== Display Content created");
       }
       this.capabilities.display = true;
@@ -1781,24 +1820,90 @@ class Denon extends utils.Adapter {
     }
   }
   /**
-   * Ensures that the val is part of the state list of given object id
+   * Ensures that the val is part of the state list of given object id. Unknown values reported by the AVR
+   * (e.g. surround modes of newer firmwares, renamed inputs) are added as key and label.
    *
    * @param id - object id
    * @param val - attribute which will be added to the object if not present
    */
   async ensureAttrInStates(id, val) {
+    const cacheKey = `${id}|${val}`;
+    if (this.knownStateValues.has(cacheKey)) {
+      return;
+    }
     try {
       const obj = await this.getObjectAsync(id);
-      if ((obj == null ? void 0 : obj.common) && helper.isObject(obj.common.states)) {
-        const values = Object.values(obj.common.states);
-        if (!values.includes(val)) {
-          obj.common.states[values.length] = val;
-          await this.setObjectAsync(id, obj);
+      if ((obj == null ? void 0 : obj.common) && "states" in obj.common && helper.isObject(obj.common.states)) {
+        const map = obj.common.states;
+        if (!Object.prototype.hasOwnProperty.call(map, val)) {
+          map[val] = val;
+          await this.setObject(id, obj);
           this.log.info(`[INFO] Added ${val} to ${id}`);
         }
+        this.knownStateValues.add(cacheKey);
       }
     } catch (e) {
       this.log.error(`Could not ensure attribute ${val} to be in ${id}: ${e.message}`);
+    }
+  }
+  /**
+   * Migrates states maps of objects created by versions < 2.0.0. Those used numeric indices as keys while the
+   * state value was the protocol code, so the value never matched a key (issues #316, #330).
+   * The new map uses the protocol code as key. Values added at runtime are kept.
+   */
+  async migrateStateMaps() {
+    const view = await this.getObjectViewAsync("system", "state", {
+      startkey: `${this.namespace}.zone`,
+      endkey: `${this.namespace}.zone\u9999`
+    });
+    const zoneIds = view.rows.map((row) => row.id).filter((id) => /\.zone\d\.selectInput$/.test(id)).map((id) => id.substring(this.namespace.length + 1));
+    const targets = {
+      "display.brightness": states.BRIGHTNESS_STATES,
+      "settings.videoProcessingMode": states.VIDEO_PROCESSING_STATES,
+      "settings.pictureMode": null,
+      "settings.surroundMode": null,
+      "settings.multEq": null,
+      "settings.dynamicVolume": null,
+      "zoneMain.selectInput": null
+    };
+    for (const id of zoneIds) {
+      targets[id] = null;
+    }
+    for (const [id, target] of Object.entries(targets)) {
+      try {
+        const obj = await this.getObjectAsync(id);
+        if (!(obj == null ? void 0 : obj.common) || !("states" in obj.common) || !helper.isObject(obj.common.states)) {
+          continue;
+        }
+        const old = obj.common.states;
+        let next;
+        if (target) {
+          next = { ...target };
+          for (const [k, v] of Object.entries(old)) {
+            if (!/^\d+$/.test(k) && !(k in next)) {
+              next[k] = v;
+            }
+          }
+        } else {
+          next = {};
+          for (const [k, v] of Object.entries(old)) {
+            const key = /^\d+$/.test(k) ? String(v) : k;
+            next[key] = String(v);
+          }
+        }
+        let changed = JSON.stringify(next) !== JSON.stringify(old);
+        if (id === "settings.pictureMode" && obj.common.read === false) {
+          obj.common.read = true;
+          changed = true;
+        }
+        if (changed) {
+          obj.common.states = next;
+          await this.setObject(id, obj);
+          this.log.info(`[MIGRATION] Updated value list of ${id}`);
+        }
+      } catch (e) {
+        this.log.warn(`[MIGRATION] Could not migrate ${id}: ${e.message}`);
+      }
     }
   }
 }

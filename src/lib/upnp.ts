@@ -19,7 +19,7 @@ interface SSDPResultEntry {
 export function httpGet(
     link: string,
     timeout: number,
-    callback: (err: any, result: string | null, link?: string) => void
+    callback: (err: any, result: string | null, link?: string) => void,
 ): void {
     const req = http
         .get(link, res => {
@@ -29,6 +29,7 @@ export function httpGet(
                 // consume response data to free up memory
                 res.resume();
                 callback(statusCode, null, link);
+                return;
             }
 
             res.setEncoding('utf8');
@@ -85,7 +86,7 @@ export function ssdpScan(
     text: string,
     readXml: boolean,
     timeout: number,
-    callback: (err: Error | null, res: SSDPResultEntry[]) => void
+    callback: (err: Error | null, res: SSDPResultEntry[]) => void,
 ): void {
     timeout = timeout || 1_000;
 

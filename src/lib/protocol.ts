@@ -99,8 +99,7 @@ export function dbToLevel(db: number): string {
 
 /** Result of parsing a channel volume line */
 export type ChannelVolumeResult =
-    | { type: 'end' }
-    | { type: 'level'; channelCode: string; stateSuffix: string | undefined; db: number };
+    { type: 'end' } | { type: 'level'; channelCode: string; stateSuffix: string | undefined; db: number };
 
 /**
  * Parses CV responses like "CVFL 50", "CVSW2 455" or the terminator "CVEND"
@@ -190,6 +189,7 @@ export function paramOf(line: string, prefix: string): string | undefined {
 export interface SignalInfo {
     /** Info key, e.g. "AISFSV" (sampling frequency), "AISSIG" (signal type), "SIGRES" (resolution) */
     key: string;
+    /** Raw value, e.g. "48K" */
     value: string;
 }
 

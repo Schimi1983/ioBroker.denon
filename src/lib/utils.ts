@@ -15,32 +15,10 @@ export function decodeState(stateRecord: Record<string, string>, state: string |
 }
 
 /**
- * Converts user input into sendable volume command
- * @param input
- */
-export function inputToVol(input: number): string {
-    let leadingZero: string;
-
-    if (input < 0) {
-        input = 0;
-    }
-    if (input % 0.5 !== 0) {
-        input = Math.round(input * 2) / 2;
-    }
-    if (input < 10) {
-        leadingZero = '0';
-    } else {
-        leadingZero = '';
-    }
-
-    return leadingZero + input.toString().replace('.', '');
-}
-
-/**
  * Convert volume to dB
  *
  * @alias volToDb
- * @param volStr volume e. g. '50.5'
+ * @param volStr level parameter, e.g. '505'
  * @returns dB
  */
 export function volToDb(volStr: string): number {
@@ -56,31 +34,8 @@ export function volToDb(volStr: string): number {
 }
 
 /**
- * Waits given ms
- *
- * @param ms
- */
-export function wait(ms: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve();
-        }, ms);
-    });
-}
-
-/**
- * Convert dB to volume
- *
- * @param vol volume in dB e. g. '10.5'
- */
-export function dbToVol(vol: string): string {
-    vol += 50; // dB to vol
-    vol = vol.toString().replace('.', '');
-    return vol;
-}
-
-/**
  * Tests whether the given variable is a real object and not an Array
+ *
  * @param it The variable to test
  */
 export function isObject(it: any): it is Record<string, any> {
@@ -92,9 +47,32 @@ export function isObject(it: any): it is Record<string, any> {
 }
 
 /**
- * Reverses an object, making the keys the new values and vice-versa
- * @param obj The object to reverse
+ * Resolves the key of a states map for a given value. Accepts the key itself or (case insensitive) its label.
+ * For maps which use protocol codes as keys (e.g. { MOVI: 'Movie' }) this returns the protocol code.
+ *
+ * @param stateRecord common.states of the object
+ * @param val value written by the user, either key or label
+ * @returns the matching key or undefined
  */
-export function reverseObject<T extends string, A extends string>(obj: Record<T, A>): Record<A, T> {
-    return Object.fromEntries(Object.entries(obj).map(([key, value]) => [value, key]));
+export function resolveStateKey(
+    stateRecord: Record<string, string> | undefined | null,
+    val: ioBroker.StateValue,
+): string | undefined {
+    if (val === null || val === undefined) {
+        return undefined;
+    }
+    const str = String(val).trim();
+    if (!stateRecord || !isObject(stateRecord)) {
+        return str || undefined;
+    }
+    if (Object.prototype.hasOwnProperty.call(stateRecord, str)) {
+        return str;
+    }
+    const upper = str.toUpperCase();
+    for (const [key, label] of Object.entries(stateRecord)) {
+        if (String(label).toUpperCase() === upper) {
+            return key;
+        }
+    }
+    return undefined;
 }

@@ -1,0 +1,80 @@
+{
+    "i18n": true,
+    "type": "panel",
+    "items": {
+        "hdrConnection": {
+            "type": "header",
+            "text": "Connection",
+            "size": 3,
+            "newLine": true
+        },
+        "ip": {
+            "type": "selectSendTo",
+            "command": "browse",
+            "manual": true,
+            "label": "IP address or hostname of the AVR",
+            "help": "Select a found device or enter the address manually. Search only works while the instance is running.",
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 6,
+            "lg": 4,
+            "xl": 4
+        },
+        "infoSingleConnection": {
+            "type": "staticText",
+            "text": "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.",
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
+        },
+        "hdrAdvanced": {
+            "type": "header",
+            "text": "Advanced settings",
+            "size": 3,
+            "newLine": true
+        },
+        "pollInterval": {
+            "type": "number",
+            "label": "Poll interval (ms)",
+            "help": "Interval for states the AVR does not push itself (display, sleep timer, quick select)",
+            "min": 1000,
+            "max": 600000,
+            "step": 1000,
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 6,
+            "lg": 4,
+            "xl": 4
+        },
+        "requestInterval": {
+            "type": "number",
+            "label": "Interval between commands (ms)",
+            "help": "Minimum gap between two commands. The protocol requires at least 50 ms",
+            "min": 50,
+            "max": 2000,
+            "step": 10,
+            "xs": 12,
+            "sm": 12,
+            "md": 6,
+            "lg": 4,
+            "xl": 4
+        },
+        "telnetPort": {
+            "type": "port",
+            "label": "Telnet port",
+            "help": "23 on all AVRs. Only change it if a serial-to-IP bridge is used",
+            "min": 1,
+            "max": 65535,
+            "xs": 12,
+            "sm": 12,
+            "md": 6,
+            "lg": 4,
+            "xl": 4
+        }
+    }
+}
