@@ -19,6 +19,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var states_exports = {};
 __export(states_exports, {
   BRIGHTNESS_STATES: () => BRIGHTNESS_STATES,
+  LEGACY_INDEX_VALUES: () => LEGACY_INDEX_VALUES,
   VIDEO_PROCESSING_STATES: () => VIDEO_PROCESSING_STATES,
   commonCommands: () => commonCommands,
   displayHttpStates: () => displayHttpStates,
@@ -29,6 +30,65 @@ __export(states_exports, {
   usCommandsZone: () => usCommandsZone
 });
 module.exports = __toCommonJS(states_exports);
+const LEGACY_INDEX_VALUES = {
+  "zoneMain.selectInput": LEGACY_INPUTS(),
+  "zone.selectInput": LEGACY_INPUTS(),
+  "settings.surroundMode": [
+    "STEREO",
+    "VIRTUAL",
+    "VIDEO GAME",
+    "MCH STEREO",
+    "DTS SURROUND",
+    "DOLBY DIGITAL",
+    "MOVIE",
+    "MUSIC",
+    "DIRECT",
+    "PURE DIRECT",
+    "AUTO",
+    "GAME",
+    "AURO3D",
+    "AURO2DSURR",
+    "WIDE SCREEN",
+    "SUPER STADIUM",
+    "ROCK ARENA",
+    "JAZZ CLUB",
+    "CLASSIC CONCERT",
+    "MONO MOVIE",
+    "MATRIX"
+  ],
+  "settings.multEq": ["OFF", "AUDYSSEY", "BYP.LR", "FLAT", "MANUAL"],
+  "settings.dynamicVolume": ["OFF", "LIT", "MED", "HEV"],
+  "display.brightness": ["OFF", "DAR", "DIM", "BRI"],
+  "settings.videoProcessingMode": ["AUTO", "GAME", "MOVI"]
+};
+function LEGACY_INPUTS() {
+  return [
+    "PHONO",
+    "CD",
+    "TUNER",
+    "DVD",
+    "BD",
+    "TV",
+    "SAT/CBL",
+    "MPLAY",
+    "GAME",
+    "NET",
+    "SPOTIFY",
+    "LASTFM",
+    "IRADIO",
+    "SERVER",
+    "FAVORITES",
+    "AUX1",
+    "AUX2",
+    "AUX3",
+    "AUX4",
+    "AUX5",
+    "AUX6",
+    "AUX7",
+    "BT",
+    "USB"
+  ];
+}
 const BRIGHTNESS_STATES = {
   OFF: "Off",
   DAR: "Dark",
@@ -1492,6 +1552,7 @@ function getChannelVolumeObjects() {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   BRIGHTNESS_STATES,
+  LEGACY_INDEX_VALUES,
   VIDEO_PROCESSING_STATES,
   commonCommands,
   displayHttpStates,

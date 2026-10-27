@@ -202,6 +202,20 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(await val('settings.surroundMode')).to.equal('DOLBY SURROUND');
             }).timeout(10_000);
 
+            it('accepts index values written by scripts for version 1.x', async () => {
+                const before = avr.received.length;
+                await harness.states.setStateAsync('denon.0.zoneMain.selectInput', '5');
+                await harness.states.setStateAsync('denon.0.settings.surroundMode', '3');
+                await harness.states.setStateAsync('denon.0.display.brightness', '3');
+                await harness.states.setStateAsync('denon.0.settings.videoProcessingMode', '2');
+                await wait(1_500);
+                const sent = avr.received.slice(before);
+                expect(sent).to.include('SITV');
+                expect(sent).to.include('MSMCH STEREO');
+                expect(sent).to.include('DIM BRI');
+                expect(sent).to.include('VSVPMMOVI');
+            }).timeout(10_000);
+
             it('sends user commands with protocol formatting', async () => {
                 const before = avr.received.length;
                 await harness.states.setStateAsync('denon.0.zoneMain.volume', 40.3);

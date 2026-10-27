@@ -1213,9 +1213,17 @@ class Denon extends utils.Adapter {
         val: ioBroker.StateValue,
         id: string,
     ): Promise<void> {
-        const states =
+        const stateMap =
             obj?.common && 'states' in obj.common ? (obj.common.states as Record<string, string>) : undefined;
-        const key = helper.resolveStateKey(states, val);
+        let key = helper.resolveStateKey(stateMap, val);
+        if (!key && typeof val !== 'boolean' && /^\d+$/.test(String(val))) {
+            // index based value of version 1.x, e.g. selectInput = '5' for TV
+            const legacy = states.LEGACY_INDEX_VALUES[id];
+            key = legacy?.[parseInt(String(val), 10)];
+            if (key) {
+                this.log.debug(`[COMMAND] Legacy index ${val} of ${id} mapped to ${key}`);
+            }
+        }
         if (!key) {
             this.log.warn(`[COMMAND] Value "${val}" is not valid for ${id}`);
             return;

@@ -1,951 +1,237 @@
-![Logo](/admin/denon.png)
-# ioBroker.denon
-===========================
+![Logo](admin/denon.png)
 
-![Build Status](https://github.com/foxriver76/ioBroker.denon/workflows/Test%20and%20Release/badge.svg)
-![Number of Installations](http://iobroker.live/badges/denon-installed.svg) ![Number of Installations](http://iobroker.live/badges/denon-stable.svg) [![NPM version](http://img.shields.io/npm/v/iobroker.denon.svg)](https://www.npmjs.com/package/iobroker.denon)
+# ioBroker.denon
+
+[![NPM version](https://img.shields.io/npm/v/iobroker.denon.svg)](https://www.npmjs.com/package/iobroker.denon)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.denon.svg)](https://www.npmjs.com/package/iobroker.denon)
+![Number of Installations](https://iobroker.live/badges/denon-installed.svg)
+![Current version in stable repository](https://iobroker.live/badges/denon-stable.svg)
 
 [![NPM](https://nodei.co/npm/iobroker.denon.png?downloads=true)](https://nodei.co/npm/iobroker.denon/)
 
+**Tests:** ![Test and Release](https://github.com/foxriver76/ioBroker.denon/workflows/Test%20and%20Release/badge.svg)
+
+## Denon/Marantz AVR adapter for ioBroker
+
+Control your Denon or Marantz AV receiver from ioBroker. The adapter connects to the receiver via the official
+telnet control protocol (port 23), receives all changes in real time and creates states for power, volume, inputs,
+surround modes, zones, tuner, display and many audio/video settings.
+
+[🇩🇪 Deutsche Dokumentation](docs/de/README.md)
+
 ## Disclaimer
+
 DENON and Marantz are trademarks of D&M Holdings Inc.
 The developers of this module are in no way endorsed by or affiliated with D&M Holdings Inc.,
 or any associated subsidiaries, logos or trademarks.
 
+## Table of contents
+
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Network setup of the AV receiver](#network-setup-of-the-av-receiver)
+* [Usage notes](#usage-notes)
+* [Upgrading from 1.x](#upgrading-from-1x)
+* [States](#states)
+* [Multi zone amplifiers (DENON POA-3012CI)](#multi-zone-amplifiers-denon-poa-3012ci)
+* [Missing functions & bugs](#missing-functions--bugs)
+* [Changelog](#changelog)
+* [License](#license)
+
+## Requirements
+
+* Denon or Marantz AV receiver with network connection (LAN or WLAN) and network control enabled
+* Node.js >= 22
+* js-controller >= 6.0.11
+* Admin >= 7.6.20
+
 ## Installation
-Install the adapter via the ioBroker admin interface: open the tab "Adapters", search for "denon" and click on "+".
-![Add Adapter](/docs/en/media/plusAddAdapter.png)
 
-## Setup
-Additional to the adapter installation you have to make sure that your AVR is correctly configured (see below).
+Install the adapter via the ioBroker admin interface: open the tab "Adapters", search for "denon" and click on the "+" symbol.
 
-### ioBroker
-1. Open the instance settings of the adapter
-2. Enter the IP address (IPv4 or IPv6) or the hostname of your AVR. While the instance is running, AVRs found in the
-   network via UPnP/SSDP are offered as suggestions. The search only finds devices in the same subnet as ioBroker.
-3. Optional settings:
-    * **Poll interval:** interval for states the AVR does not push by itself (display, sleep timer, quick select, signal information)
-    * **Interval between commands:** minimum gap between two commands. The protocol requires at least 50 ms, the default of 100 ms fits most users
-    * **Telnet port:** 23 on all AVRs, only change it behind a serial-to-IP bridge
-    * **Identify device via HTTP:** reads `Deviceinfo.xml` once at startup to detect brand (Denon/Marantz), model and number of zones. Control and all state updates always use telnet
-4. Save and close
+## Configuration
 
-### Upgrading from 1.x
-Version 2.0.0 changes the value lists of some states to the protocol codes. Adapt scripts and visualizations which use these values:
+| Setting | Description |
+|---|---|
+| IP address or hostname of the AVR | IPv4 address, IPv6 address or hostname of the receiver. While the instance is running, receivers found in the network via UPnP/SSDP are offered as suggestions. The search only finds devices in the same subnet as ioBroker, otherwise enter the address manually. |
+| Poll interval (ms) | Interval for values the receiver does not report by itself (display, sleep timer, quick select, signal information). Default: 7000 ms |
+| Interval between commands (ms) | Minimum gap between two commands. The protocol requires at least 50 ms. Default: 100 ms |
+| Telnet port | 23 on all receivers. Only change it if a serial-to-IP bridge is used. |
+| Identify device via HTTP | Reads `Deviceinfo.xml` once at startup to detect brand (Denon/Marantz), model and number of zones. Queries for zones which do not exist are skipped. Control and all state updates always use telnet. Default: on |
 
-| State | old value | new value |
+## Network setup of the AV receiver
+
+1. Press the SETUP button on the remote, the menu appears on the front display and the TV
+2. Select "Network" → "Settings" and configure
+    * DHCP: "On" if a DHCP server (e.g. router) is available, otherwise set IP address, subnet mask and gateway manually
+    * Proxy: "Off"
+3. Select "Network" → "Network Control" (on some models "IP Control") and set it to **"Always On"**.
+   With "Off In Standby" the receiver ignores network commands in standby and cannot be switched on by ioBroker.
+
+## Usage notes
+
+* **Only one telnet connection:** the receiver accepts a single telnet connection. If another application is connected
+  (e.g. Home Assistant, the Denon/Marantz app, a script), the connection of the adapter is refused. A refused connection
+  is reported as warning if it lasts longer than 30 seconds, because a booting receiver also refuses connections for a few seconds.
+* **Reconnect:** the adapter reconnects automatically after a connection loss (1 s, 2 s, 4 s ... up to 60 s).
+  If the receiver does not send anything for 30 seconds, a keepalive query is sent; without an answer the connection is re-established.
+  Scripts which restart the instance on connection loss are not needed.
+* **Command pacing:** commands are queued and sent with the configured interval. Commands of the user are sent before
+  pending polls. After switching on the receiver or a zone, the next command is delayed by 1 second as required by the protocol.
+* **Features depending on the model:** many states are only created once the receiver answers the related query,
+  so a model without the feature gets no state. Surround modes and inputs reported by the receiver which are missing in the
+  value list are added automatically.
+* **Denon and Marantz:** quick select uses `QUICK` on Denon and `SMART` on Marantz receivers. The adapter detects the brand
+  and only sends the matching command.
+* **HEOS models:** receivers with HEOS (models from 2016) do not report the network display content and cover via telnet.
+
+## Upgrading from 1.x
+
+Version 2.0.0 changes the values reported in some states to the protocol codes. Scripts and visualizations which compare
+the **read** values have to be adapted:
+
+| State | Values up to 1.x | Values from 2.0.0 |
 |---|---|---|
 | `display.brightness` | `Off`, `Dark`, `Dimmed`, `Bright` | `OFF`, `DAR`, `DIM`, `BRI` |
-| `settings.videoProcessingMode` | `AUTO`, `GAME`, `MOVIE` (reported as e.g. `MAUTO`) | `AUTO`, `GAME`, `MOVI`, `BYP` |
-| `settings.pictureMode` | never filled before | `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+| `settings.videoProcessingMode` | `AUTO`, `GAME`, `MOVIE` (in fact reported as `MAUTO` etc.) | `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `settings.pictureMode` | never filled | `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
 
-Writing the label (e.g. `Bright` or `Movie`) is still accepted. Inputs, surround modes, MultEQ and dynamic volume keep their values,
-only the value lists now use the value as key. Surround modes and inputs reported by the AVR which are missing in the list are added automatically.
+Writing still works with the old values: the label (e.g. `Bright`, `Movie`) as well as the list index of 1.x
+(e.g. `selectInput` = `'5'` for TV, `surroundMode` = `'3'` for MCH STEREO) are converted to the protocol code.
+Inputs, surround modes, MultEQ and dynamic volume keep their values; only the value lists now use the value as key.
+Existing objects are migrated automatically at the first start.
 
-### Network Setup of AV Receiver
+## States
 
-1. Press SETUP button, then Menu appears on FL-display(and GUI)
-2. Select "Network" --> "Settings"
-3. Set parameters described below
+Values marked with *(on demand)* are only created if the receiver answers the related query.
 
-   *DHCP: "ON" (Use this setting when DHCP server is on the local network.)*
-  
-   *IP Address: When <DHCP> sets "Off”, please set IP address.*
-  
-   *Subnet Mask: When <DHCP> sets "Off", please set Subnet Mask.*
-  
-   *Gateway: Set the address of Gateway when Gateway is on the local network.*
-  
-   *Primary DNS: Do not set this parameter.*
-  
-   *Second DNS: Do not set this parameter.*
-  
-   *Proxy: Set this parameter "Off".*
-  
-4. Press SETUP button, then Menu appears on FL-display (and GUI)
-5. Select “Network" --> Network Control/IP Control"
-6. Set this parameter to "Always On".
+### Channel: info
 
-## Usage
-Take note, that the AVRs can only manage a single telnet connection. If you are having an active telnet connection e. g. with Home Assistant, the Denon/Marantz app or the javascript adapter, the AVR will refuse the connection of this adapter.
-A refused connection is reported as warning if it lasts longer than 30 seconds (a booting AVR also refuses connections for a few seconds).
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `info.connection` | boolean | R | `true` while the telnet connection is established |
+| `info.friendlyName` | string | R | Friendly name of the receiver |
+| `info.model` | string | R | Model, e.g. `AVR-X2200W` (HTTP identification) |
+| `info.brand` | string | R | `Denon` or `Marantz` (HTTP identification) |
+| `info.zones` | number | R | Number of zones incl. main zone (HTTP identification) |
+| `info.audioSignalCode` | string | R | *(on demand)* Code of the audio input signal. Model specific, e.g. AVR-X2200W: `02` PCM, `05` Dolby TrueHD, `06` DTS, `09` DTS-HD |
+| `info.audioSampleRate` | string | R | *(on demand)* Sample rate of the audio input signal, e.g. `48K` |
+| `info.videoResolutionCode` | string | R | *(on demand)* Code of the video resolution (model specific) |
+| `info.onlinePresets` | string | R | JSON array of the saved network audio favorites (id and channel) |
 
-The adapter reconnects automatically (1 s, 2 s, 4 s ... up to 60 s). If the AVR does not send anything for 30 seconds, a keepalive query is sent; without an answer the connection is re-established.
-Scripts which restart the instance on connection loss are not needed anymore.
-Here you can find a description of the states and how to use them.
+### Channel: zoneMain / zone2 / zone3
 
-### Buttons
-The adapter creates the following buttons:
+Zone 2 and zone 3 are created once the receiver reports them. All states exist per zone unless noted otherwise.
 
-* info.model / info.brand / info.zones
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `powerZone` | boolean | R/W | Power of the zone |
+| `volume` | number | R/W | Volume 0 ... 98 in steps of 0.5, 80 = 0 dB |
+| `volumeDB` | number | R/W | Volume in dB, -80 ... +18 |
+| `volumeUp` / `volumeDown` | button | W | Increase / decrease volume |
+| `maximumVolume` / `maximumVolumeDB` | number | R | Maximum volume (main zone only) |
+| `muteIndicator` | boolean | R/W | Mute |
+| `selectInput` | string | R/W | Input source, e.g. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Inputs reported by the receiver are added to the value list. |
+| `quickSelect` | number | R/W | Quick select / smart select 1 ... 5, `0` = none active |
+| `sleepTimer` | number | R/W | Sleep timer in minutes 0 ... 120, `0` = off |
+| `equalizerBass` / `equalizerTreble` | number | R/W | Bass / treble -6 ... +6 dB (Dynamic EQ off and tone control on required) |
+| `equalizerBassUp` / `equalizerBassDown` / `equalizerTrebleUp` / `equalizerTrebleDown` | button | W | Step bass / treble |
+| `channelVolume<Speaker>` | number | R/W | Channel level -12 ... +12 dB per speaker, e.g. `channelVolumeFrontLeft`, `channelVolumeCenter`, `channelVolumeSubwooferTwo`. The main zone has all speakers of the protocol, zone 2/3 front left and right |
+| `playPause` / `play` / `pause` / `skipPlus` / `skipMinus` | button | W | Playback control for network, Bluetooth and USB sources (main zone only) |
+| `iconURL` | string | R | URL of the cover of the network source (main zone only, not for HEOS models) |
 
-    |Data type|Permission|
-    |:---:|:---:|
-    |string / string / number|R|
+```javascript
+setState('denon.0.zoneMain.volume', 45.5); // volume 45.5 (-34.5 dB)
+setState('denon.0.zoneMain.selectInput', 'TV'); // select input TV
+```
 
-   *Only filled if "Identify device via HTTP" is active and the AVR serves `Deviceinfo.xml`. Brand is `Denon` or `Marantz`, zones include the main zone.*
+### Channel: settings
 
-* info.audioSignalCode / info.audioSampleRate / info.videoResolutionCode
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `powerSystem` | boolean | R/W | System power (on / standby) |
+| `surroundMode` | string | R/W | Surround mode as reported by the receiver, e.g. `STEREO`, `DOLBY SURROUND`, `DTS HD+NEURAL:X`. New modes are added to the value list automatically |
+| `soundModeMovie` / `soundModeMusic` / `soundModeGame` / `soundModeDirect` / `soundModePureDirect` / `soundModeStereo` / `soundModeAuto` | button | W | Select a surround mode group; the receiver picks the best mode of the group for the current signal |
+| `dynamicEq` | boolean | R/W | Audyssey Dynamic EQ |
+| `multEq` | string | R/W | MultEQ: `OFF`, `AUDYSSEY`, `BYP.LR`, `FLAT`, `MANUAL` |
+| `dynamicVolume` | string | R/W | Dynamic volume: `OFF`, `LIT`, `MED`, `HEV` |
+| `referenceLevelOffset` | string | R/W | Reference level offset: `0`, `5`, `10`, `15` dB |
+| `audysseyLfc` | boolean | R/W | *(on demand)* Audyssey Low Frequency Containment |
+| `containmentAmount` | number | R/W | *(on demand)* LFC amount 1 ... 7, buttons `containmentAmountUp` / `containmentAmountDown` |
+| `toneControl` | boolean | R/W | Tone control (only possible with Dynamic EQ off) |
+| `subwooferLevelState` | boolean | R/W | Enables the subwoofer level adjustment |
+| `subwooferLevel` / `subwooferTwoLevel` | number | R/W | Subwoofer level -12 ... +12 dB (`subwooferTwoLevel` on demand), buttons `subwooferLevelUp/Down`, `subwooferTwoLevelUp/Down` |
+| `lfeAmount` | number | R/W | LFE level 0 ... 10, 10 = -10 dB |
+| `centerSpread` | boolean | R/W | Center spread |
+| `dialogLevelAdjust` / `dialogLevel` | boolean / number | R/W | Dialog level adjustment for DTS content, -12 ... +12 dB |
+| `dialogControl` | number | R/W | DTS:X dialog control 0 ... 6 dB |
+| `dynamicCompression` | string | R/W | *(on demand)* Dynamic range compression: `AUTO`, `LOW`, `MID`, `HI`, `OFF` |
+| `audioRestorer` | string | R/W | *(on demand)* Audio restorer: `OFF`, `LOW`, `MED`, `HI` |
+| `ecoMode` | string | R/W | *(on demand)* ECO mode: `ON`, `AUTO`, `OFF` |
+| `autoStandby` | string | R/W | *(on demand)* Auto standby of the main zone: `15M`, `30M`, `60M`, `OFF` |
+| `inputMode` | string | R/W | *(on demand)* Audio input mode: `AUTO`, `HDMI`, `DIGITAL`, `ANALOG`, `EXT.IN`, `7.1IN`, `ARC`; `NO` = no input signal |
+| `digitalInputMode` | string | R/W | *(on demand)* Digital input mode: `AUTO`, `PCM`, `DTS` |
+| `outputMonitor` | number | R/W | *(on demand)* HDMI output for receivers with two outputs: `0` auto, `1`, `2` |
+| `videoProcessingMode` | string | R/W | *(on demand)* Video processing: `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `pictureMode` | string | R/W | *(on demand)* Picture mode: `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+| `speakerPreset` | number | R/W | *(on demand)* Speaker preset `1` or `2` |
+| `setupMenu` | boolean | R/W | Opens / closes the setup menu |
+| `cursorUp` / `cursorDown` / `cursorLeft` / `cursorRight` / `enter` / `return` / `option` / `info` | button | W | Remote control buttons for menu navigation |
+| `savePreset` / `loadPreset` | string | R/W | Saves the current network audio channel to / loads it from the given id of `info.onlinePresets`. These states are not acknowledged |
+| `expertCommand` | string | R/W | Sends any protocol command, e.g. `ECOON`. See [AVR-Control-Protocol.pdf](docs/AVR-Control-Protocol.pdf) |
+| `expertReadingPattern` | string | R/W | Regular expression (without leading/trailing `/`); matching lines received from the receiver are written to `expertReadingResult` |
+| `expertReadingResult` | string | R | Last received line which matches `expertReadingPattern` |
 
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R|
+Writing a value list state accepts the protocol code or the label, e.g. both `MOVI` and `Movie` for `videoProcessingMode`.
 
-   *Signal information of the current input (models from 2015, created once the AVR answers). The codes are model specific,
-   on an AVR-X2200W `audioSignalCode` 02 = PCM, 05 = Dolby TrueHD, 06 = DTS, 09 = DTS-HD; `audioSampleRate` e.g. `48K`.*
+```javascript
+setState('denon.0.settings.surroundMode', 'MCH STEREO');
+setState('denon.0.settings.soundModeMovie', true); // best movie mode for the current signal
+setState('denon.0.settings.expertReadingPattern', '(MV.+)|(SSINFAISFSV.+)');
+setState('denon.0.settings.expertCommand', 'ECOON');
+```
 
-#### Channel: zoneMain / zone2 / zone3
+### Channel: display
 
-* zoneMain.playPause
-
-   *Play and pause music from Bluetooth, Online, USB/iPod sources.*
-   
-* zoneMain.play
-
-   *Play music from Bluetooth, Online, USB/iPod sources.*
-   
-* zoneMain.pause
-
-   *Pause music from Bluetooth, Online, USB/iPod sources.*
-
-* zoneMain.skipMinus
-
-   *Skip to previous title.*
-   
-   *NOT FULLY SUPPORTED FOR HEOS AVR'S*
-
-* zoneMain.skipPlus
-
-   *Skip to next title.*
-   
-   *NOT FULLY SUPPORTED FOR HEOS AVR'S*
-
-* zoneMain.volumeDown / zone2.volumeDown / zone3.volumeDown
-
-   *Decrease volume of Main Zone / Zone2 / Zone3.*
-   
-* zoneMain.volumeUp / zone2.volumeUp / zone3.volumeUp
-
-   *Increase volume of Main Zone / Zone2 / Zone3.*
-   
-* zoneMain.equalizerBassUp / zone2.equalizerBassUp / zone3.equalizerBassUp
-
-   *Button which increases bass level of the Zone.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-* zoneMain.equalizerBassDown / zone2.equalizerBassDown / zone3.equalizerBassDown
-
-   *Button which decreases bass level of the Zone.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-* zoneMain.equalizerTrebleUp / zone2.equalizerTrebleUp / zone3.equalizerTrebleUp
-
-   *Button which increases treble level of the Zone.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-* zoneMain.equalizerTrebleDown / zone2.equalizerTrebleDown / zone3.equalizerTrebleDown
-
-   *Button which decreases treble level of the Zone.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-#### Channel: settings
-   
-* settings.subwooferLevelDown / settings.subwooferTwoLevelDown
-
-   *Reduce subwoofer level by pressing the button.*
-   
-* settings.subwooferLevelUp / settings.subwooferTwoLevelUp
-
-   *Increase subwoofer level by pressing the button.*
-   
-* settings.containmentAmountDown
-
-   *Decrease Audyssey LFC amount. The button will only be created, if it is supported by your AVR.*
-
-* settings.containmentAmountUp
-
-   *Increase Audyssey LFC amount. The button will only be created, if it is supported by your AVR.*
-   
-* settings.cursorUp / settings.cursorDown / settings.cursorLeft / settings.cursorRight
-
-   *Simulates the cursor buttons of your remote control*
-   
-* settings.enter
-
-   *Simulates the enter button of your remote control*
-	
-* settings.return
-
-   *Simulates the return/back button of your remote control*
-   
-* settings.option
-
-   *Simulates the option button of your remote control*
-   
-* settings.info
-
-   *Simulates the info button of your remote control*
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `displayContent0` ... `displayContent8` | string | R | Content of the network menu / now playing display, line 0 is the title, line 8 the page indicator (not for HEOS models) |
+| `cursorLine` | number | R | *(on demand)* Line 1 ... 7 which carries the cursor |
+| `brightness` | string | R/W | Front display: `OFF`, `DAR` (dark), `DIM` (dimmed), `BRI` (bright) |
 
 ### Channel: tuner
 
-* tuner.frequencyUp
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `frequency` | number | R/W | Tuner frequency, below 500 FM in MHz (e.g. `106.9`), above 500 AM in kHz |
+| `frequencyUp` / `frequencyDown` | button | W | Step the frequency |
+| `stationName` | string | R | RDS station name if available |
+
+## Multi zone amplifiers (DENON POA-3012CI)
+
+Multi zone amplifiers like the DENON POA-3012CI use a different protocol. The states `info.connection`, `settings.powerSystem`,
+`settings.expertCommand` and `display.brightness` are equal to the ones above. Additionally the following states are created
+for each zone 2 ... 12 (even numbers):
+
+| State | Type | R/W | Description |
+|---|---|---|---|
+| `zoneX.speakerOneVolume` / `zoneX.speakerTwoVolume` | number | R/W | Volume of the speaker 0 ... 99. In operation mode `BRIDGED` both speakers are controlled together |
+| `zoneX.selectInputOne` / `zoneX.selectInputTwo` | string | R/W | Input of the speaker: `0` BUS L, `1` BUS R, `2` BUS M, `3` AUX |
+| `zoneX.operationMode` | string | R/W | `0` NORMAL, `1` BRIDGED |
+| `zoneX.lowCutFilterSpeakerOne` / `zoneX.lowCutFilterSpeakerTwo` | boolean | R/W | Low cut filter of the speaker |
+| `zoneX.zoneTurnOnModeChange` | string | R/W | `0` constant, `1` trigger in, `2` audio signal, `3` off |
+| `zoneX.triggerInput` | boolean | R/W | Trigger input |
+| `zoneX.audioSignalInput` | boolean | R/W | Audio signal input |
+| `settings.powerConfigurationChange` | string | R/W | Power configuration |
+| `settings.masterTriggerInput` | boolean | R/W | Master trigger input |
 
-    *Increases tuner frequency.*
-
-* tuner.frequencyDown
-
-  *Decreases tuner frequency.*
-
-### States
-Following states will be created by the adapter:
-
-#### Channel: info
-
-* info.connection
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R|
-
-   *Read-only boolean indicator. If your broker is connected to your DENON AVR, the state is true otherwise false.*
-   
-* info.friendlyName
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R|
-
-   *Read only string. Contains the friendly name of the connected AVR.*
-
-* info.onlinePresets
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R|
-
-    *String in JSON array format, which represents the current saved
-    favorites by its id and channel.
-    The names of each channel are limited by 20 digits. You can save the
-    current channel to an id by setting settings.savePreset and load one
-    by setting settings.loadPreset to the related id.*
-
-#### Channel: zoneMain / zone2 / zone3
-   
-* zoneMain.volume / zone2.volume / zone3.volume
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value which represents the current Main Zone / Zone2 / Zone 3 volume of your AVR. You can also set the volume here. 
-   The volume is represented in dB too in separate states, e. g. mainVolumeDB*
-   
-   *Range is from 0 to 98 (maybe lower due to maximumVolume), where 80 = 0 dB*
-   
-   *Example:*
-   
-    ```javascript
-    setState('denon.0.zoneMain.volume', 45.5); // Sets volume of Main Zone to 45.5
-    ```
-   
-* zoneMain.maximumVolume
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R|
-
-   *Read-only number which represents the maximum possible volume, where 80 = 0 dB. The volume is also set in dB in the maximumVolumeDB state.*
-   
-* zoneMain.muteIndicator / zone2.muteIndicator / zone3.muteIndicator
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean value, which is true if the Main Zone / Zone2 / Zone3 is muted, otherwise false. You can mute your AVR with this state.*
-   
-   *Example:*
-   
-    ```javascript
-    setState('denon.0.zoneMain.muteIndicator', true); // Mutes the Main Zone of your AVR
-    ```
-   
-* zoneMain.powerZone / zone2.powerZone / zone3.powerZone
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean value, which is true if the Zone is turned on, otherwise false. You can turn your AVR / Zone on and off with this state.*
-   
-* zoneMain.selectInput / zone2.selectInput / zone3.selectInput
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *The string value contains the current input source. You can also set the input source with the following encoding:*
-   
-   *0: 	PHONO*
-   
-   *1: 	CD*
-   
-   *2: 	TUNER*
-   
-   *3: 	DVD*
-   
-   *4: 	BD*
-   
-   *5: 	TV*
-   
-   *6: 	SAT/CBL*
-   
-   *7: 	MPLAY*
-   
-   *8: 	GAME*
-   
-   *9: 	NET*
-   
-   *10:	SPOTIFY*
-   
-   *11:	LASTFM*
-   
-   *12:	IRADIO*
-   
-   *13:	SERVER*
-   
-   *14:	FAVORITES*
-   
-   *15:	AUX1*
-   
-   *16:	AUX2*
-   
-   *17:	AUX3*
-   
-   *18:	AUX4*
-   
-   *19:	AUX5*
-   
-   *20:	AUX6*
-   
-   *21:	AUX7*
-
-   *22: BT*
-
-   *23: USB*
-   
-   *Please note, that not every input source is available on every AVR model. If your AVR has additional inputs,
-    they will be appended to the list, once they have been detected.*
-   
-   *Example:*
-   
-   ```javascript
-    setState('denon.0.zoneMain.selectInput', '5'); // Selects TV as input for Main Zone
-   ```
-   
-* zoneMain.quickSelect / zone2.quickSelect / zone3.quickSelect
-
-   |Data type|Permission|                                                                       
-   |:---:|:---:|
-   |number|R/W|
-   
-   *Emulates the quick select buttons of your remote, with numbers from 1 to 5 for Main Zone / Zone2 / Zone3.*
-   
-* zoneMain.sleepTimer / zone2.sleepTimer / zone3.sleepTimer
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number-value to read and set the sleep timer for the selected zone. The value will be updated in less than 10 seconds.*
-   
-* zoneMain.iconURL
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R|
-
-   *Contains a link where you can find the cover of the channel/song which is currently played.*
-   
-   *NOT SUPPORTED FOR HEOS AVR'S*
-   
-* zoneMain.equalizerBass / zone2.equalizerBass / zone3.equalizerBass
-    
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value which represents the bass level of the Zone. Value range is from -6 to +6 dB.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-* zoneMain.equalizerTreble / zone2.equalizerTreble / zone3.equalizerTreble
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value which represents the treble level of the Zone. Value range is from -6 to +6 dB.*
-   
-   *Bass and treble settings can be adjusted when Dyn EQ is set to OFF and Tone Control is on*
-   
-* zoneMain.channelVolumeFrontLeft / zone2.channelVolumeFrontLeft / zone3.channelVolumeFrontLeft / ...
-
-   |Data type|Permission|                                                                       
-   |:---:|:---:|
-   |number|R/W|
-   
-   *Number value which represents the current channel volume for each speaker. Each speaker has a separate state. The 
-   settings affect the current Select Input Mode. The state can be adjusted from -12 dB to +12 dB.*
-
-#### Channel: tuner
-
-* tuner.stationName
-
-  |Data type|Permission|                                                                       
-  |:---:|:---:|
-  |string|R|
-
-  *Read-only string which contains the current station name if available.*
-
-* tuner.frequency
-
-  |Data type|Permission|                                                                       
-  |:---:|:---:|
-  |number|R/W|
-
-  *Number value which represents the current frequency. You can also set a frequency with this state. 
-  Values below 500 are on FM frequency and above 500 on AM frequency.*
-
-
-   ```javascript
-   setState('denon.0.tuner.frequency', 106.9); // Set frequency to 106.9 MHz (FM)
-   ```
-
-#### Channel: display
-
-* display.displayContent
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R|
-   
-   *Read-only string which contains the content of your AVR display. It has nine states 0 - 9.*
-   
-   *DISPLAY CONTENT IS NOT SUPPORTED FOR HEOS AVR'S*
-   
-* display.cursorLine
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |number|R|
-
-   *Line (1-7) of the display content which carries the cursor of the network menu. Created with the first cursor line.*
-
-* display.brightness
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R/W|
-
-   *Display brightness as protocol code: `OFF`, `DAR` (dark), `DIM` (dimmed), `BRI` (bright). Writing the label (e.g. `Bright`) works too.*
-
-   *Example:*
-
-   ```javascript
-   setState('denon.0.display.brightness', 'BRI'); // Sets display brightness to "Bright"
-   ```
-
-#### Channel: settings
-
-* settings.ecoMode / settings.autoStandby / settings.dynamicCompression / settings.audioRestorer / settings.inputMode / settings.digitalInputMode
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R/W|
-
-   *Created once the AVR answers the related query, so models without the feature get no state. Values are protocol codes:*
-
-   |State|Command|Values|
-   |---|---|---|
-   |`ecoMode`|`ECO`|`ON`, `AUTO`, `OFF`|
-   |`autoStandby`|`STBY`|`15M`, `30M`, `60M`, `OFF`|
-   |`dynamicCompression`|`PSDRC`|`AUTO`, `LOW`, `MID`, `HI`, `OFF`|
-   |`audioRestorer`|`PSRSTR`|`OFF`, `LOW`, `MED`, `HI`|
-   |`inputMode`|`SD`|`AUTO`, `HDMI`, `DIGITAL`, `ANALOG`, `EXT.IN`, `7.1IN`, `ARC`, `NO` (read only: no input)|
-   |`digitalInputMode`|`DC`|`AUTO`, `PCM`, `DTS`|
-
-* settings.soundModeMovie / Music / Game / Direct / PureDirect / Stereo / Auto
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |boolean|W|
-
-   *Buttons to select a surround mode group. The AVR picks the best mode of the group for the current signal, the result is reported in `settings.surroundMode`.*
-
-
-* settings.powerSystem
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-   
-   *Boolean value which is true, if the AVR is turned on, otherwise false. You can also turn your AVR on and off with this state.*
-   
-* settings.surroundMode
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *The string value contains the current Surround mode. You can also change the source with the following encoding:*
-   
-   *0:	STEREO*
-   
-   *1:	VIRTUAL*
-   
-   *2:	VIDEO GAME*
-   
-   *3:	MCH STEREO*
-   
-   *4:	DTS SURROUND*
-   
-   *5:	DOLBY DIGITAL*
-   
-   *6:	MOVIE*
-   
-   *7:	MUSIC*
-   
-   *8:	DIRECT*
-   
-   *9:	PURE DIRECT*
-   
-   *10:	AUTO*
-   
-   *11:	GAME*
-   
-   *12:	AURO3D*
-   
-   *13:	AURO2DSURR*
-   
-   *14:	WIDE SCREEN*
-   
-   *15:	SUPER STADIUM*
-   
-   *16:	ROCK ARENA*
-   
-   *17:	JAZZ CLUB*
-   
-   *18:	CLASSIC CONCERT*
-   
-   *19:	MONO MOVIE*
-   
-   *20:	MATRIX*
-   
-   *Please note, that not every Surround mode is available on every AVR model.*
-   
-   *Example:*
-   
-   ```javascript
-   setState('denon.0.settings.surroundMode', '3'); // Sets Multi Channel Stereo as surround mode
-   ```
-   
-* settings.lfeAmount
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-    *Amount of subwoofer signal additional directed to speakers in dB. 
-    Range is from 0 dB to -10 dB. Where 10 = -10 dB.*
-    
-* settings.expertCommand
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *You can send your own custom commands with this state. You can find an overview about the existing commands in the [AVR-Control-Protocol.pdf](docs/AVR-Control-Protocol.pdf)*
-   
-   *Example:*
-   
-    ```javascript
-    setState('denon.0.settings.expertCommand', 'ECOON'); // Turns Main Zone ECO mode on
-    ```
-  
-* settings.expertReadingPattern
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-    
-    *If you want to get specific answers stored in `settings.expertReadingResult` you have to set a RegEx to this state.
-    RegEx has to be set, so that a RegEx Constructor can use it. It is recommended to use a [RegEx tester](https://regexr.com/).
-    Do not set `/` at the beginning or end of the RegEx.*
-    
-    *Example:*
-    
-    ```javascript
-    setState('denon.0.settings.expertReadingPattern', '(MV.+)|(SSINFAISFSV.+)');
-
-* settings.expertReadingResult
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R|
-    
-    *Incoming data, which matches the RegEx of `settings.expertReadingPattern` will be set to this state.*
-
-
-* settings.dialogControl
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-    *The dialog control, which can be operated from 0 dB to 6 dB.*
-
-* settings.dialogLevelAdjust
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-    *Turns the dialog level adjustment on, which allows to modify the dialog volume of DTS content.*
-
-* settings.dialogLevel
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-    *If dialog level adjustment is turned on you can modify the dialog volume of DTS content between -12 dB and +12 dB.*
-
-* settings.outputMonitor
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *Select the output monitor of your AVR. This state will only be created if your AVR supports two HDMI outputs. You can switch the state between:*
-   
-   *0: AUTO --> Auto detection of monitor*
-   
-   *1: 1 --> Outputs signal to monitor 1*
-   
-   *2: 2 --> Outputs signal to monitor 2*
-   
-   *Example:*
-     
-   ```javascript
-   setState('denon.0.settings.outputMonitor', '2'); // Sets monitor 2 as active monitor
-   ```
-   
-* settings.videoProcessingMode
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *Select the video processing mode of your AVR. This state will only be created if your AVR supports it. You can switch the state between:*
-   
-   *0: AUTO*
-   
-   *1: GAME*
-   
-   *2: MOVIE*
-       
-   *Example:*
- 
-    ```javascript
-    setState('denon.0.settings.videoProcessingMode', '2'); // Sets Video Processing Mode to "MOVIE"
-    ```
-   
-* settings.centerSpread
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean-value which is true if center spread is truned on, else false. You can also turn on/off center spread with this state.*
-   
-* settings.dynamicEq
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean value which represents the state of Dynamic EQ. You can also set Dynamic EQ on and off with this state.*
-
-* settings.subwooferLevelState
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean value, if it's true, you are able to make changes on the subwoofer level.*
-
-* settings.subwooferLevel / settings.subwooferTwoLevel
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value which indicates the current subwoofer level. The value has a range from -12 to 12 (-12 dB to +12 dB).
-   The SubwooferTwoLevel state will only be created if it is supported by your AVR.*
-   
-* settings.audysseyLfc
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean value, which contains and is able to control Audyssey Low Frequency Containment status (on/off).
-   The state will only be created, if it is supported by your AVR.*
-   
-* settings.containmentAmount
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |number|R/W|
-	
-   *Number value to set the Low Frequency Containment Amount. The value can be between 1 and 7. The state will only be
-   created, if it is supported by your AVR.*
-   
-* settings.multEq
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *String value, to set the MultEQ function of your AVR with the following encoding:*
-   
-   *0: OFF*
-              
-   *1: AUDYSSEY*
-                	
-   *2: BYP.LR*
-   
-   *3: FLAT*
-      
-   *4: MANUAL*
-   
-* settings.dynamicVolume
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *String value to select the Dynamic Volume by following encoding:*
-   
-   *0: OFF --> turns Dynamic Volume off*
-   
-   *1: LIT --> turns Dynamic Volume to light*
-   
-   *2: MED --> turns Dynamic Volume to medium*
-   
-   *3: HEV --> turns Dynamic Volume to heavy*
-   
-* settings.referenceLevelOffset
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *String value to select the Reference Level Offset by the following encoding:*
-   
-   *0: 	0 dB*
-   
-   *5:	5 dB*
-   
-   *10:	10 dB*
-   
-   *15: 15 dB*
-   
-   *Example:*
-   
-    ```javascript
-    setState('denon.0.settings.referenceLevelOffset', '5'); // Sets Reference Level Offset to 5 dB
-    ```
-    
-* settings.pictureMode
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |string|R/W|
-
-   *String value to set the Picture Mode Direct Change. This state will only be created when your AVR supports it*
-   
-   *You can set the following values as string:*
-   
-   *'Off'* 
-   
-   *'Standard'*
-   
-   *'Movie'*
-   
-   *'Vivid'*
-   
-   *'Stream'*
-    
-   *'Custom'*
-   
-   *'ISF Day'*
-   
-   *'ISF Night'*
-   
-   *Example:*
-   
-   ```javascript
-   setState('denon.0.settings.pictureMode', 'Standard'); // Set Picture Mode Direct Change to Standard
-   ```
-   
-* settings.toneControl
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-    
-   *Boolean value, which indicates Tone Control status. You can turn it off/on with this state.*
-   
-   *Tone Control can only be turned on when Dyn EQ is set to OFF*
-   
-* settings.setupMenu
-
-    |Data type|Permission|                                                                       
-    |:---:|:---:|
-    |boolean|R/W|
-
-   *Boolean indicator, which indicates if setup menu is currently open or closed. You can open and close it with this state.*
-
-* settings.savePreset
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value, which can be set to a value of info.onlinePresets. Then the current channel will be saved as a preset to the given number.
-   Only numbers which are contained in info.onlinePresets can be used. The state will not get an acknowledge, no matter the command was successful
-   or not. You can check info.onlinePresets to check if the command has worked as aspected.*
-
-* settings.loadPreset
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |number|R/W|
-
-   *Number value, which can be set to a value of info.onlinePresets. This will load the related channel.
-   This state will not get an acknowledge, no matter the command has been successful or not.*
-
-* settings.speakerPreset
-
-  |Data type|Permission|                                                                       
-  |:---:|:---:|
-  |number|R/W|
-
-  *Set the speaker preset if supported by the AVR. Speaker preset can be `1` or `2`.*
-
-### Other States
-Due to the fact that some AVRs like the DENON POA-3012CI use another logic there are some differences in the states.
-The states which are equal to the ones listed above are: settings.powerSystem, settings.expertCommand, display.brightness
-and info.connection. Additional the following states are created for each zone 2-12 (even):
-
-* zoneX.speakerOneVolume / zoneX.speakerTwoVolume
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |number|R/W|
-    
-    *Number value, which represents the volume of the AVR's speaker. If operationMode is set to 'BRIDGED' 
-    the speakers cannot independently controlled and the control of one also controls the other ones volume.*
-    
-* zoneX.selectInputOne / zoneX.selectInputTwo
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R/W|
-    
-    *Key value pair, which represents the selected input of the AVR's speaker. If operationMode is set to 'BRIDGED' 
-    the speakers cannot independently controlled and the control of one also controls the other ones input.*
-    
-    *The following values are possible:*
-    
-    *'0': 'BUS L'*
-    
-    *'1': 'BUS R'*
-    
-    *'2': 'BUS M'*
-    
-    *'3': 'AUX'*
-    
-* zoneX.operationMode
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R/W|
-    
-    *Key value pair, which represents the operationMode of the AVR. If operationMode is set to 'BRIDGED' 
-    the speakers cannot independently controlled and controlling speaker one also controls speaker two.*
-    
-    *The following values are possible:*
-        
-    *'0': 'NORMAL'*
-        
-    *'1': 'BRIDGED'*
-    
-* zoneX.lowCutFilterSpeakerOne / zoneX.lowCutFilterSpeakerTwo
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |boolean|R/W|
-    
-    *Boolean value, which indicates if the low cut filter for the speaker is enabled or disabled. In bridged mode
-    both speakers will depend on each other.*
-    
-* zoneX.zoneTurnOnModeChange
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |string|R/W|
-    
-    *Key value pair, which represents the zone turn on mode change of the zone. You can also control your 
-    AVR with this state.*
-    
-    *The following values are possible:*
-    
-    *'0': 'Constant'*
-    
-    *'1': 'Trigger in'*
-    
-    *'2': 'Audio signal'*
-    
-    *'3': 'Off'*
-    
-* zoneX.triggerInput
-    
-    |Data type|Permission|
-    |:---:|:---:|
-    |boolean|R/W|
-    
-    *Turn trigger input on or off with this boolean value.*
-    
-* zoneX.audioSignalInput
-
-    |Data type|Permission|
-    |:---:|:---:|
-    |boolean|R/W|
-    
-    *Boolean value which indicates and controls the audio signal input of your AVR.*  
-   
 ## Missing functions & bugs
-If you are missing any functions or detected a bug, please open an [issue](https://github.com/foxriver76/ioBroker.denon/issues).
 
-The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
+If you are missing any functions or detected a bug, please open an [issue](https://github.com/foxriver76/ioBroker.denon/issues).
+Please add a debug log and the model of your receiver.
+
+The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz SR5009.
 
 ## Changelog
 <!--
@@ -953,14 +239,13 @@ The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
 	### **WORK IN PROGRESS**
 -->
 ### **WORK IN PROGRESS**
-* (Schimi1983) **Breaking:** value lists of `display.brightness`, `settings.videoProcessingMode` and `settings.pictureMode` now use the protocol codes as values (e.g. `BRI`, `MOVI`, `MOV`). Scripts and visualizations using the old values have to be adapted
-* (Schimi1983) value lists of surround mode, inputs, MultEQ and dynamic volume use the reported value as key, unknown values reported by the AVR are added automatically (fixes #316, #403)
+* (Schimi1983) **Breaking:** the read values of `display.brightness`, `settings.videoProcessingMode` and `settings.pictureMode` are protocol codes now (e.g. `BRI`, `MOVI`, `MOV`), see [Upgrading from 1.x](#upgrading-from-1x). Writing labels and the index values of 1.x still works
+* (Schimi1983) value lists of surround mode, inputs, MultEQ and dynamic volume use the reported value as key, unknown values reported by the receiver are added automatically (fixes #316, #330, #403)
 * (Schimi1983) new telnet transport: line buffer (CR only), prioritized send queue with protocol pacing (>= 50 ms, 1 s after power on), keepalive and reconnect with backoff
 * (Schimi1983) fixed display lines (control characters, cursor line was cut), picture mode (#317), video processing mode, channel volumes SW2-SW4, CVEND, sleep timer formatting
-* (Schimi1983) zones and quick/smart select flavor (Denon/Marantz) are only polled if present
 * (Schimi1983) connection errors are logged once, a refused connection (telnet in use by another app) is reported as warning only after 30 s (#240)
-* (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported), queries for missing zones are skipped
-* (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the AVR answers
+* (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported); queries for missing zones and for the quick select variant of the other brand are skipped
+* (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)
 
@@ -984,6 +269,7 @@ The adapter is tested with an DENON AVR-X1200W and a Marantz SR5009.
 Older changes can be found in [CHANGELOG_OLD.md](CHANGELOG_OLD.md)
 
 ## License
+
 The MIT License (MIT)
 
 Copyright (c) 2018-2026 Moritz Heusinger <moritz.heusinger@gmail.com>

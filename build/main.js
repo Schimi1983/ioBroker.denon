@@ -1140,8 +1140,15 @@ class Denon extends utils.Adapter {
    * @param id state id for logging
    */
   async sendKeyed(prefix, obj, val, id) {
-    const states2 = (obj == null ? void 0 : obj.common) && "states" in obj.common ? obj.common.states : void 0;
-    const key = helper.resolveStateKey(states2, val);
+    const stateMap = (obj == null ? void 0 : obj.common) && "states" in obj.common ? obj.common.states : void 0;
+    let key = helper.resolveStateKey(stateMap, val);
+    if (!key && typeof val !== "boolean" && /^\d+$/.test(String(val))) {
+      const legacy = states.LEGACY_INDEX_VALUES[id];
+      key = legacy == null ? void 0 : legacy[parseInt(String(val), 10)];
+      if (key) {
+        this.log.debug(`[COMMAND] Legacy index ${val} of ${id} mapped to ${key}`);
+      }
+    }
     if (!key) {
       this.log.warn(`[COMMAND] Value "${val}" is not valid for ${id}`);
       return;

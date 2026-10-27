@@ -1,3 +1,73 @@
+/**
+ * Value lists of versions < 2.0.0 used the list index as key. Scripts written for these versions set e.g.
+ * `selectInput` to '5' for TV. These lists keep such writes working.
+ *
+ * @KI_HINWEIS: Order must never change, it reproduces the index based lists of 1.x exactly.
+ */
+export const LEGACY_INDEX_VALUES: Readonly<Record<string, readonly string[]>> = {
+    'zoneMain.selectInput': LEGACY_INPUTS(),
+    'zone.selectInput': LEGACY_INPUTS(),
+    'settings.surroundMode': [
+        'STEREO',
+        'VIRTUAL',
+        'VIDEO GAME',
+        'MCH STEREO',
+        'DTS SURROUND',
+        'DOLBY DIGITAL',
+        'MOVIE',
+        'MUSIC',
+        'DIRECT',
+        'PURE DIRECT',
+        'AUTO',
+        'GAME',
+        'AURO3D',
+        'AURO2DSURR',
+        'WIDE SCREEN',
+        'SUPER STADIUM',
+        'ROCK ARENA',
+        'JAZZ CLUB',
+        'CLASSIC CONCERT',
+        'MONO MOVIE',
+        'MATRIX',
+    ],
+    'settings.multEq': ['OFF', 'AUDYSSEY', 'BYP.LR', 'FLAT', 'MANUAL'],
+    'settings.dynamicVolume': ['OFF', 'LIT', 'MED', 'HEV'],
+    'display.brightness': ['OFF', 'DAR', 'DIM', 'BRI'],
+    'settings.videoProcessingMode': ['AUTO', 'GAME', 'MOVI'],
+};
+
+/**
+ * Input list of versions < 2.0.0 in index order
+ */
+function LEGACY_INPUTS(): string[] {
+    return [
+        'PHONO',
+        'CD',
+        'TUNER',
+        'DVD',
+        'BD',
+        'TV',
+        'SAT/CBL',
+        'MPLAY',
+        'GAME',
+        'NET',
+        'SPOTIFY',
+        'LASTFM',
+        'IRADIO',
+        'SERVER',
+        'FAVORITES',
+        'AUX1',
+        'AUX2',
+        'AUX3',
+        'AUX4',
+        'AUX5',
+        'AUX6',
+        'AUX7',
+        'BT',
+        'USB',
+    ];
+}
+
 /** Dimmer values, key = protocol code (DIM BRI|DIM|DAR|OFF) */
 export const BRIGHTNESS_STATES: Record<string, string> = {
     OFF: 'Off',
