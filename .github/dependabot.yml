@@ -1,9 +1,29 @@
 version: 2
 updates:
-- package-ecosystem: npm
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "04:00"
-  open-pull-requests-limit: 10
-  versioning-strategy: increase-if-necessary
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly
+      day: 9
+      time: "00:05"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    assignees:
+      - Schimi1983
+    versioning-strategy: increase
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      day: 9
+      time: "00:05"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    assignees:
+      - Schimi1983

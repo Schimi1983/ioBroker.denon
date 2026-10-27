@@ -1,16 +1,20 @@
-.git
+# No dot-directories except github/vscode
+.*/
+!.vscode/
+!.github/
+
+*.code-workspace
 node_modules
 nbproject
+
+# npm package files
+iobroker.*.tgz
+
+Thumbs.db
+.commitinfo
+
+# i18n intermediate files
 admin/i18n/flat.txt
 admin/i18n/*/flat.txt
-
-# IDEs and editors
-.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-.dev-server
+# dev-server
+.dev-server/

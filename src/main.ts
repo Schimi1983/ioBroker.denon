@@ -1543,7 +1543,7 @@ class Denon extends utils.Adapter {
             // Remove all STX, SOH, NULL
             const displayCont = (
                 data.includes('\0') ? data.substring(4, data.indexOf('\0')) : data.substring(4)
-            ).replace(/[\1\2]/g, '');
+            ).replace(/[\x00-\x1f]/g, '');
 
             const dispContNr = data.slice(3, 4);
             if (!this.capabilities.display) {
