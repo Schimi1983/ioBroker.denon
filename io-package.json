@@ -4,8 +4,8 @@
     "version": "2.0.0-alpha.3",
     "news": {
       "2.0.0-alpha.3": {
-        "en": "zone 2/3: input SOURCE is recognized, volume is sent in whole steps",
-        "de": "Zone 2/3: Eingang SOURCE wird erkannt, Lautstärke wird in ganzen Schritten gesendet",
+        "en": "zone 2/3: input SOURCE is recognized, volume is sent in whole steps; settings are read again after power on",
+        "de": "Zone 2/3: Eingang SOURCE wird erkannt, Lautstärke wird in ganzen Schritten gesendet; Einstellungen werden nach dem Einschalten neu gelesen",
         "ru": "Зона 2/3: распознаётся вход SOURCE, громкость отправляется целыми шагами",
         "pt": "Zona 2/3: a entrada SOURCE é reconhecida, o volume é enviado em passos inteiros",
         "nl": "Zone 2/3: ingang SOURCE wordt herkend, volume wordt in hele stappen verzonden",

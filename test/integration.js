@@ -10,7 +10,8 @@ const { tests } = require('@iobroker/testing');
 const RESPONSES = {
     'SV?': ['SVOFF'],
     'PW?': ['PWON'],
-    'ZM?': ['ZMON'],
+    'ZM?': ['ZMOFF'],
+    ZMON: ['ZMON'],
     'MU?': ['MUOFF'],
     'MV?': ['MV455', 'MVMAX 98'],
     'SI?': ['SITV', 'SVOFF'],
@@ -248,6 +249,16 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(sent).to.include('Z236');
                 expect(sent).to.not.include('Z2355');
                 expect(await val('zone2.volume')).to.equal(36);
+            }).timeout(10_000);
+
+            it('reads the settings again when the main zone is switched on', async () => {
+                const before = avr.received.length;
+                await harness.states.setStateAsync('denon.0.zoneMain.powerZone', true);
+                await wait(3_000);
+                const sent = avr.received.slice(before);
+                expect(sent).to.include('ZMON');
+                expect(sent).to.include('VSSCH ?');
+                expect(await val('zoneMain.powerZone')).to.equal(true);
             }).timeout(10_000);
 
             it('sends user commands with protocol formatting', async () => {

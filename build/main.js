@@ -205,6 +205,8 @@ class Denon extends utils.Adapter {
     speakerPreset: false
   };
   zonesCreated = {};
+  /** Last reported power of the main zone, undefined until the first answer */
+  mainZoneOn;
   /** Cache of id|value pairs already present in common.states */
   knownStateValues = /* @__PURE__ */ new Set();
   receiverType;
@@ -1794,9 +1796,17 @@ class Denon extends utils.Adapter {
         break;
       case "ZMON":
         await this.setState("zoneMain.powerZone", true, true);
+        if (this.mainZoneOn === false) {
+          await this.sendRequests(
+            import_settings.ENUM_SETTINGS.map((setting) => setting.query),
+            "normal"
+          );
+        }
+        this.mainZoneOn = true;
         break;
       case "ZMOFF":
         await this.setState("zoneMain.powerZone", false, true);
+        this.mainZoneOn = false;
         break;
       case "SLP": {
         data = data.slice(3, data.length);

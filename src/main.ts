@@ -204,6 +204,8 @@ class Denon extends utils.Adapter {
     };
 
     private zonesCreated: Record<string, boolean> = {};
+    /** Last reported power of the main zone, undefined until the first answer */
+    private mainZoneOn: boolean | undefined;
     /** Cache of id|value pairs already present in common.states */
     private readonly knownStateValues = new Set<string>();
     private receiverType?: AvrType;
@@ -1976,9 +1978,20 @@ class Denon extends utils.Adapter {
                 break;
             case 'ZMON':
                 await this.setState('zoneMain.powerZone', true, true);
+                if (this.mainZoneOn === false) {
+                    // @KI_HINWEIS: In standby the AVR-X2200W answers VSSCH ? with AUTO although 4K is set,
+                    // so the settings are read again once the main zone is on. The state can't be used to detect
+                    // the transition because a user write sets it to true (ack=false) before the echo arrives.
+                    await this.sendRequests(
+                        ENUM_SETTINGS.map(setting => setting.query),
+                        'normal',
+                    );
+                }
+                this.mainZoneOn = true;
                 break;
             case 'ZMOFF':
                 await this.setState('zoneMain.powerZone', false, true);
+                this.mainZoneOn = false;
                 break;
             case 'SLP': {
                 data = data.slice(3, data.length);
