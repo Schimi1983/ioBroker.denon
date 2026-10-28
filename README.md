@@ -127,12 +127,13 @@ Signal codes measured on an AVR-X2200W. The codes depend on the model generation
 | `audioSignalCode` | Signal | | `videoResolutionCode` digit | Resolution |
 |---|---|---|---|---|
 | `01` | standby / analog | | `0` | no signal |
-| `02` | PCM | | `2` | 480p/576p |
+| `02` | PCM (stereo and multichannel) | | `2` | 480p/576p |
 | `03` | Dolby Digital | | `6` | 720p |
 | `04` | Dolby Digital Plus | | `7` | 1080p 50/60 Hz |
-| `05` | Dolby TrueHD | | `8` | 1080p 24 Hz |
+| `05` | Dolby TrueHD (also with Atmos) | | `8` | 1080p 24 Hz |
 | `06` | DTS | | `9` | 2160p (4K) |
-| `09` | DTS-HD | | | |
+| `08` | DTS-HD High Resolution | | | |
+| `09` | DTS-HD Master Audio | | | |
 | `12` | switching, no signal yet | | | |
 
 The video code consists of `0`, the digit of the input and the digit of the output, e.g. `088` = 1080p 24 Hz in and out, `009` = no input (TV via ARC), 4K output.
