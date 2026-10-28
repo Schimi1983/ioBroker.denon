@@ -85,6 +85,20 @@ class Denon extends utils.Adapter {
     "Z2CV?",
     "Z3CV?",
     "PSLFE ?",
+    "BDSTATUS?",
+    "PSDIL ?",
+    "PSDIC ?",
+    "TFAN?",
+    "TFANNAME?",
+    "SPPR ?"
+  ];
+  /**
+   * Queries of multi zone amplifiers (DENON POA-3012CI, receiver type "US"). AV receivers do not answer them,
+   * so they are only sent if such an amplifier was detected.
+   *
+   * @KI_HINWEIS: On an AVR-X2200W these ~75 unanswered queries made up half of the initial update (21 s at 300 ms).
+   */
+  usUpdateCommands = [
     "PW00?",
     "SD00?",
     "SV01?",
@@ -163,13 +177,7 @@ class Denon extends utils.Adapter {
     "PR06OH?",
     "PR08OH?",
     "PR10OH?",
-    "PR12OH?",
-    "BDSTATUS?",
-    "PSDIL ?",
-    "PSDIC ?",
-    "TFAN?",
-    "TFANNAME?",
-    "SPPR ?"
+    "PR12OH?"
   ];
   /**
    * Commands to send during poll (display, sleep timer, quick select).
@@ -362,7 +370,7 @@ class Denon extends utils.Adapter {
     var _a;
     const zones = (_a = this.deviceInfo) == null ? void 0 : _a.zones;
     const flavor = this.quickSelectPrefix;
-    const cmds = [...this.updateCommands, ...import_settings.ENUM_SETTINGS.map((setting) => setting.query), ...import_settings.SIGNAL_INFO_QUERIES];
+    const cmds = this.receiverType === "US" ? [...this.updateCommands, ...this.usUpdateCommands] : [...this.updateCommands, ...import_settings.ENUM_SETTINGS.map((setting) => setting.query), ...import_settings.SIGNAL_INFO_QUERIES];
     return cmds.filter((cmd) => {
       const zone = /^Z(\d)/.exec(cmd);
       if (zone && zones !== void 0 && parseInt(zone[1], 10) > zones) {

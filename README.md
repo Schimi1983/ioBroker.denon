@@ -244,6 +244,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) new telnet transport: line buffer (CR only), prioritized send queue with protocol pacing (>= 50 ms, 1 s after power on), keepalive and reconnect with backoff
 * (Schimi1983) fixed display lines (control characters, cursor line was cut), picture mode (#317), video processing mode, channel volumes SW2-SW4, CVEND, sleep timer formatting
 * (Schimi1983) connection errors are logged once, a refused connection (telnet in use by another app) is reported as warning only after 30 s (#240)
+* (Schimi1983) queries of multi zone amplifiers (POA-3012CI) are only sent to such devices, the initial update of AV receivers is about twice as fast
 * (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported); queries for missing zones and for the quick select variant of the other brand are skipped
 * (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
