@@ -1979,8 +1979,8 @@ class Denon extends utils.Adapter {
             case 'ZMON':
                 await this.setState('zoneMain.powerZone', true, true);
                 if (this.mainZoneOn === false) {
-                    // @KI_HINWEIS: In standby the AVR-X2200W answers VSSCH ? with AUTO although 4K is set,
-                    // so the settings are read again once the main zone is on. The state can't be used to detect
+                    // @KI_HINWEIS: The settings are only queried at startup. Reading them again when the main zone is
+                    // switched on keeps them current if they were changed in standby. The state can't be used to detect
                     // the transition because a user write sets it to true (ack=false) before the echo arrives.
                     await this.sendRequests(
                         ENUM_SETTINGS.map(setting => setting.query),

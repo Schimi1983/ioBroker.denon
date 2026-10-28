@@ -271,7 +271,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) new states `info.videoInputResolution`, `info.videoOutputResolution` (decoded from the resolution code), `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
 * (Schimi1983) buttons are acknowledged after the command was sent
 * (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps because half steps are ignored by the receiver
-* (Schimi1983) settings are read again when the main zone is switched on (in standby e.g. the HDMI resolution is reported as `AUTO`)
+* (Schimi1983) settings are read again when the main zone is switched on
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)
 
