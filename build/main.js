@@ -1578,8 +1578,19 @@ class Denon extends utils.Adapter {
       const firmware = info ? import_settings.FIRMWARE_STATES[info.key] : void 0;
       if (info && signal) {
         this.signalInfoSupported = true;
-        await this.ensureObject(signal.id, signal.obj);
-        await this.setStateChangedAsync(signal.id, info.value, true);
+        const resolution = info.key === "SIGRES" ? protocol.parseVideoResolution(info.value) : void 0;
+        if (!resolution || resolution.input !== void 0 && resolution.output !== void 0) {
+          await this.ensureObject(signal.id, signal.obj);
+          await this.setStateChangedAsync(signal.id, info.value, true);
+        }
+        for (const side of ["input", "output"]) {
+          const text = resolution == null ? void 0 : resolution[side];
+          if (text !== void 0) {
+            const target = import_settings.VIDEO_RESOLUTION_STATES[side];
+            await this.ensureObject(target.id, target.obj);
+            await this.setStateChangedAsync(target.id, text, true);
+          }
+        }
       } else if (info && firmware) {
         await this.ensureObject(firmware.id, firmware.obj);
         await this.setStateChangedAsync(firmware.id, info.value, true);

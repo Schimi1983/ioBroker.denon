@@ -227,6 +227,26 @@ export const SIGNAL_INFO_STATES: Record<string, { id: string; obj: ioBroker.Sett
     },
 };
 
+/** Decoded video resolution of the HDMI input and output (from SSINFSIGRES) */
+export const VIDEO_RESOLUTION_STATES: Record<'input' | 'output', { id: string; obj: ioBroker.SettableStateObject }> = {
+    input: {
+        id: 'info.videoInputResolution',
+        obj: {
+            type: 'state',
+            common: { name: 'Video input resolution', role: 'text', type: 'string', read: true, write: false },
+            native: {},
+        },
+    },
+    output: {
+        id: 'info.videoOutputResolution',
+        obj: {
+            type: 'state',
+            common: { name: 'Video output resolution', role: 'text', type: 'string', read: true, write: false },
+            native: {},
+        },
+    },
+};
+
 /** Query for the firmware versions, only sent once at startup */
 export const FIRMWARE_QUERY = 'SSINFFRM ?';
 

@@ -15,6 +15,7 @@ import {
     SIGNAL_INFO_STATES,
     SOUND_MODE_BUTTONS,
     soundModeButtonObjects,
+    VIDEO_RESOLUTION_STATES,
 } from './lib/settings';
 import * as helper from './lib/utils';
 import * as states from './lib/states';
@@ -1708,8 +1709,20 @@ class Denon extends utils.Adapter {
             const firmware = info ? FIRMWARE_STATES[info.key] : undefined;
             if (info && signal) {
                 this.signalInfoSupported = true;
-                await this.ensureObject(signal.id, signal.obj);
-                await this.setStateChangedAsync(signal.id, info.value, true);
+                // newer models answer SIGRES with one line per side ("I..." / "O..."), keep the raw code of old models only
+                const resolution = info.key === 'SIGRES' ? protocol.parseVideoResolution(info.value) : undefined;
+                if (!resolution || (resolution.input !== undefined && resolution.output !== undefined)) {
+                    await this.ensureObject(signal.id, signal.obj);
+                    await this.setStateChangedAsync(signal.id, info.value, true);
+                }
+                for (const side of ['input', 'output'] as const) {
+                    const text = resolution?.[side];
+                    if (text !== undefined) {
+                        const target = VIDEO_RESOLUTION_STATES[side];
+                        await this.ensureObject(target.id, target.obj);
+                        await this.setStateChangedAsync(target.id, text, true);
+                    }
+                }
             } else if (info && firmware) {
                 await this.ensureObject(firmware.id, firmware.obj);
                 await this.setStateChangedAsync(firmware.id, info.value, true);

@@ -27,6 +27,7 @@ __export(settings_exports, {
   SIGNAL_INFO_QUERIES: () => SIGNAL_INFO_QUERIES,
   SIGNAL_INFO_STATES: () => SIGNAL_INFO_STATES,
   SOUND_MODE_BUTTONS: () => SOUND_MODE_BUTTONS,
+  VIDEO_RESOLUTION_STATES: () => VIDEO_RESOLUTION_STATES,
   enumSettingObject: () => enumSettingObject,
   findEnumSetting: () => findEnumSetting,
   soundModeButtonObjects: () => soundModeButtonObjects
@@ -214,6 +215,24 @@ const SIGNAL_INFO_STATES = {
     }
   }
 };
+const VIDEO_RESOLUTION_STATES = {
+  input: {
+    id: "info.videoInputResolution",
+    obj: {
+      type: "state",
+      common: { name: "Video input resolution", role: "text", type: "string", read: true, write: false },
+      native: {}
+    }
+  },
+  output: {
+    id: "info.videoOutputResolution",
+    obj: {
+      type: "state",
+      common: { name: "Video output resolution", role: "text", type: "string", read: true, write: false },
+      native: {}
+    }
+  }
+};
 const FIRMWARE_QUERY = "SSINFFRM ?";
 const FIRMWARE_STATES = {
   FRMAVR: {
@@ -301,6 +320,7 @@ function soundModeButtonObjects() {
   SIGNAL_INFO_QUERIES,
   SIGNAL_INFO_STATES,
   SOUND_MODE_BUTTONS,
+  VIDEO_RESOLUTION_STATES,
   enumSettingObject,
   findEnumSetting,
   soundModeButtonObjects

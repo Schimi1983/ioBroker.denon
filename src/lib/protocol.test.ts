@@ -11,6 +11,7 @@ import {
     parseChannelVolume,
     parseDisplayLine,
     parseSignalInfo,
+    parseVideoResolution,
     parseVolume,
 } from './protocol';
 
@@ -158,5 +159,30 @@ describe('protocol', () => {
             expect(formatSleepTimer(120)).to.equal('120');
             expect(formatSleepTimer(121)).to.equal(undefined);
         });
+    });
+});
+
+describe('parseVideoResolution', () => {
+    it('decodes the 3 digit code of the AVR-X2200W (verified live 2026-10-28)', () => {
+        expect(parseVideoResolution('077')).to.deep.equal({ input: '1080p', output: '1080p' });
+        expect(parseVideoResolution('088')).to.deep.equal({ input: '1080p 24Hz', output: '1080p 24Hz' });
+        expect(parseVideoResolution('099')).to.deep.equal({ input: '2160p', output: '2160p' });
+        expect(parseVideoResolution('009')).to.deep.equal({ input: 'no signal', output: '2160p' });
+        expect(parseVideoResolution('000')).to.deep.equal({ input: 'no signal', output: 'no signal' });
+    });
+
+    it('reports digits which are not verified yet with the raw digit', () => {
+        expect(parseVideoResolution('066')).to.deep.equal({ input: 'unknown (6)', output: 'unknown (6)' });
+    });
+
+    it('decodes the I/O format of newer models', () => {
+        expect(parseVideoResolution('I1080p60')).to.deep.equal({ input: '1080p60' });
+        expect(parseVideoResolution('O2160p60')).to.deep.equal({ output: '2160p60' });
+        expect(parseVideoResolution('I---')).to.deep.equal({ input: 'no signal' });
+    });
+
+    it('rejects other values', () => {
+        expect(parseVideoResolution('NON')).to.equal(undefined);
+        expect(parseVideoResolution('')).to.equal(undefined);
     });
 });

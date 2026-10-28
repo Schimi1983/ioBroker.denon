@@ -115,11 +115,27 @@ Values marked with *(on demand)* are only created if the receiver answers the re
 | `info.model` | string | R | Model, e.g. `AVR-X2200W` (HTTP identification) |
 | `info.brand` | string | R | `Denon` or `Marantz` (HTTP identification) |
 | `info.zones` | number | R | Number of zones incl. main zone (HTTP identification) |
-| `info.audioSignalCode` | string | R | *(on demand)* Code of the audio input signal. Model specific, e.g. AVR-X2200W: `02` PCM, `05` Dolby TrueHD, `06` DTS, `09` DTS-HD |
+| `info.audioSignalCode` | string | R | *(on demand)* Code of the audio input signal, see table below |
 | `info.audioSampleRate` | string | R | *(on demand)* Sample rate of the audio input signal, e.g. `48K` |
-| `info.videoResolutionCode` | string | R | *(on demand)* Code of the video resolution (model specific) |
+| `info.videoResolutionCode` | string | R | *(on demand)* Raw code of the video resolution (models up to about 2016) |
+| `info.videoInputResolution` / `info.videoOutputResolution` | string | R | *(on demand)* Resolution of the HDMI input / output, e.g. `1080p`, `1080p 24Hz`, `2160p`, `no signal` |
 | `info.firmware` / `info.firmwareDts` | string | R | *(on demand)* Firmware version of the receiver and of the DTS decoder |
 | `info.onlinePresets` | string | R | JSON array of the saved network audio favorites (id and channel) |
+
+Signal codes measured on an AVR-X2200W. The codes depend on the model generation, newer models may use other values:
+
+| `audioSignalCode` | Signal | | `videoResolutionCode` digit | Resolution |
+|---|---|---|---|---|
+| `01` | standby / analog | | `0` | no signal |
+| `02` | PCM | | `7` | 1080p 50/60 Hz |
+| `03` | Dolby Digital | | `8` | 1080p 24 Hz |
+| `05` | Dolby TrueHD | | `9` | 2160p (4K) |
+| `06` | DTS | | | |
+| `09` | DTS-HD | | | |
+| `12` | switching, no signal yet | | | |
+
+The video code consists of `0`, the digit of the input and the digit of the output, e.g. `088` = 1080p 24 Hz in and out, `009` = no input (TV via ARC), 4K output.
+Other digits are reported as `unknown (n)` until they are verified.
 
 ### Channel: zoneMain / zone2 / zone3
 
@@ -251,7 +267,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) queries of multi zone amplifiers (POA-3012CI) are only sent to such devices, the initial update of AV receivers is about twice as fast
 * (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported); queries for missing zones and for the quick select variant of the other brand are skipped
 * (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
-* (Schimi1983) new states `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
+* (Schimi1983) new states `info.videoInputResolution`, `info.videoOutputResolution` (decoded from the resolution code), `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
 * (Schimi1983) buttons are acknowledged after the command was sent
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)

@@ -217,3 +217,57 @@ export function formatSleepTimer(minutes: number): string | undefined {
     }
     return Math.round(minutes).toString().padStart(3, '0');
 }
+
+/**
+ * Resolution digits of the 3 digit SSINFSIGRES code (models around 2015, e.g. AVR-X2200W).
+ *
+ * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28) with a media player as source:
+ * 7 = 1080p 50/60 Hz, 8 = 1080p 24 Hz, 9 = 2160p (4K), 0 = no signal. The remaining digits follow the order of
+ * the resolution list of the protocol (VSSC: 480p/576p, 1080i, 720p, 1080p, 1080p:24Hz, 4K, 4K 60/50) and are
+ * not verified yet, therefore they are reported with the raw digit.
+ */
+export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
+    0: 'no signal',
+    7: '1080p',
+    8: '1080p 24Hz',
+    9: '2160p',
+};
+
+/** Parsed video resolution */
+export interface VideoResolution {
+    /** Input resolution, undefined if not part of the answer */
+    input?: string;
+    /** Output resolution, undefined if not part of the answer */
+    output?: string;
+}
+
+/**
+ * Translates one resolution digit
+ *
+ * @param digit single character of the code
+ */
+function resolutionDigit(digit: string): string {
+    return RESOLUTION_DIGITS[digit] ?? `unknown (${digit})`;
+}
+
+/**
+ * Parses the value of an SSINFSIGRES answer. Two formats exist:
+ * - 3 digits on older models: "0" + input digit + output digit, e.g. "088" = 1080p 24 Hz in and out, "009" = no input, 4K out
+ * - newer models send one line per side: "I1080p60" / "O2160p60", "---" = no signal
+ *
+ * @param value value part of the answer, e.g. "088" or "I1080p60"
+ */
+export function parseVideoResolution(value: string): VideoResolution | undefined {
+    const v = value.trim();
+    const legacy = /^\d([0-9A-F])([0-9A-F])$/i.exec(v);
+    if (legacy) {
+        return { input: resolutionDigit(legacy[1]), output: resolutionDigit(legacy[2]) };
+    }
+    const side = /^([IO])\s*(.*)$/.exec(v);
+    if (side) {
+        const res = side[2].trim();
+        const text = !res || /^-+$/.test(res) ? 'no signal' : res;
+        return side[1] === 'I' ? { input: text } : { output: text };
+    }
+    return undefined;
+}

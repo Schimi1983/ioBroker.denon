@@ -101,11 +101,27 @@ Mit *(bei Bedarf)* gekennzeichnete States werden nur angelegt, wenn der Receiver
 | `info.model` | string | R | Modell, z. B. `AVR-X2200W` (HTTP-Erkennung) |
 | `info.brand` | string | R | `Denon` oder `Marantz` (HTTP-Erkennung) |
 | `info.zones` | number | R | Anzahl Zonen inkl. Hauptzone (HTTP-Erkennung) |
-| `info.audioSignalCode` | string | R | *(bei Bedarf)* Code des Audio-Eingangssignals. Modellabhängig, z. B. AVR-X2200W: `02` PCM, `05` Dolby TrueHD, `06` DTS, `09` DTS-HD |
+| `info.audioSignalCode` | string | R | *(bei Bedarf)* Code des Audio-Eingangssignals, siehe Tabelle unten |
 | `info.audioSampleRate` | string | R | *(bei Bedarf)* Abtastrate des Audio-Eingangssignals, z. B. `48K` |
-| `info.videoResolutionCode` | string | R | *(bei Bedarf)* Code der Videoauflösung (modellabhängig) |
+| `info.videoResolutionCode` | string | R | *(bei Bedarf)* Rohcode der Videoauflösung (Modelle bis etwa 2016) |
+| `info.videoInputResolution` / `info.videoOutputResolution` | string | R | *(bei Bedarf)* Auflösung am HDMI-Eingang / -Ausgang, z. B. `1080p`, `1080p 24Hz`, `2160p`, `no signal` |
 | `info.firmware` / `info.firmwareDts` | string | R | *(bei Bedarf)* Firmware-Version des Receivers und des DTS-Decoders |
 | `info.onlinePresets` | string | R | JSON-Array der gespeicherten Netzwerk-Favoriten (ID und Sender) |
+
+Gemessene Signal-Codes eines AVR-X2200W. Die Codes hängen von der Modellgeneration ab, neuere Modelle können andere Werte nutzen:
+
+| `audioSignalCode` | Signal | | Ziffer `videoResolutionCode` | Auflösung |
+|---|---|---|---|---|
+| `01` | Standby / analog | | `0` | kein Signal |
+| `02` | PCM | | `7` | 1080p 50/60 Hz |
+| `03` | Dolby Digital | | `8` | 1080p 24 Hz |
+| `05` | Dolby TrueHD | | `9` | 2160p (4K) |
+| `06` | DTS | | | |
+| `09` | DTS-HD | | | |
+| `12` | Umschaltung, noch kein Signal | | | |
+
+Der Video-Code besteht aus `0`, der Ziffer für den Eingang und der Ziffer für den Ausgang, z. B. `088` = 1080p 24 Hz ein und aus, `009` = kein Eingang (TV über ARC), Ausgang 4K.
+Andere Ziffern werden als `unknown (n)` gemeldet, bis sie bestätigt sind.
 
 ### Kanal: zoneMain / zone2 / zone3
 

@@ -23,6 +23,7 @@ __export(protocol_exports, {
   DISPLAY_ATTR_CURSOR: () => DISPLAY_ATTR_CURSOR,
   DISPLAY_ATTR_FOLDER: () => DISPLAY_ATTR_FOLDER,
   DISPLAY_ATTR_PLAYABLE: () => DISPLAY_ATTR_PLAYABLE,
+  RESOLUTION_DIGITS: () => RESOLUTION_DIGITS,
   cleanDisplayText: () => cleanDisplayText,
   dbToLevel: () => dbToLevel,
   formatSleepTimer: () => formatSleepTimer,
@@ -32,6 +33,7 @@ __export(protocol_exports, {
   parseChannelVolume: () => parseChannelVolume,
   parseDisplayLine: () => parseDisplayLine,
   parseSignalInfo: () => parseSignalInfo,
+  parseVideoResolution: () => parseVideoResolution,
   parseVolume: () => parseVolume
 });
 module.exports = __toCommonJS(protocol_exports);
@@ -153,6 +155,30 @@ function formatSleepTimer(minutes) {
   }
   return Math.round(minutes).toString().padStart(3, "0");
 }
+const RESOLUTION_DIGITS = {
+  0: "no signal",
+  7: "1080p",
+  8: "1080p 24Hz",
+  9: "2160p"
+};
+function resolutionDigit(digit) {
+  var _a;
+  return (_a = RESOLUTION_DIGITS[digit]) != null ? _a : `unknown (${digit})`;
+}
+function parseVideoResolution(value) {
+  const v = value.trim();
+  const legacy = /^\d([0-9A-F])([0-9A-F])$/i.exec(v);
+  if (legacy) {
+    return { input: resolutionDigit(legacy[1]), output: resolutionDigit(legacy[2]) };
+  }
+  const side = /^([IO])\s*(.*)$/.exec(v);
+  if (side) {
+    const res = side[2].trim();
+    const text = !res || /^-+$/.test(res) ? "no signal" : res;
+    return side[1] === "I" ? { input: text } : { output: text };
+  }
+  return void 0;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   CHANNEL_VOLUME_MAPPINGS,
@@ -160,6 +186,7 @@ function formatSleepTimer(minutes) {
   DISPLAY_ATTR_CURSOR,
   DISPLAY_ATTR_FOLDER,
   DISPLAY_ATTR_PLAYABLE,
+  RESOLUTION_DIGITS,
   cleanDisplayText,
   dbToLevel,
   formatSleepTimer,
@@ -169,6 +196,7 @@ function formatSleepTimer(minutes) {
   parseChannelVolume,
   parseDisplayLine,
   parseSignalInfo,
+  parseVideoResolution,
   parseVolume
 });
 //# sourceMappingURL=protocol.js.map
