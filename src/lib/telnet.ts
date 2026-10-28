@@ -255,7 +255,7 @@ export class DenonTelnetClient extends EventEmitter<DenonTelnetClientEvents> {
         }
         this.queueRunning = true;
         try {
-            while (this.queue.length && this.connectedFlag && this.socket) {
+            while (this.queue.length && this.connectedFlag && this.socket && !this.stopped) {
                 const item = this.queue.shift()!;
                 await this.write(item.command);
                 item.resolve();
@@ -286,6 +286,10 @@ export class DenonTelnetClient extends EventEmitter<DenonTelnetClientEvents> {
     }
 
     private delay(ms: number): Promise<void> {
+        // @KI_HINWEIS: No timer after stop(), ioBroker warns "setTimeout called, but adapter is shutting down"
+        if (this.stopped) {
+            return Promise.resolve();
+        }
         return new Promise(resolve => this.opts.timers.setTimeout(resolve, ms));
     }
 

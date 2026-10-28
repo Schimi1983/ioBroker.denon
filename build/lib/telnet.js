@@ -175,7 +175,7 @@ class DenonTelnetClient extends import_node_events.EventEmitter {
     }
     this.queueRunning = true;
     try {
-      while (this.queue.length && this.connectedFlag && this.socket) {
+      while (this.queue.length && this.connectedFlag && this.socket && !this.stopped) {
         const item = this.queue.shift();
         await this.write(item.command);
         item.resolve();
@@ -201,6 +201,9 @@ class DenonTelnetClient extends import_node_events.EventEmitter {
     });
   }
   delay(ms) {
+    if (this.stopped) {
+      return Promise.resolve();
+    }
     return new Promise((resolve) => this.opts.timers.setTimeout(resolve, ms));
   }
   flushQueue() {

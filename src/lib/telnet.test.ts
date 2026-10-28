@@ -237,6 +237,28 @@ describe('telnet', () => {
             expect(avr.connections).to.be.at.least(1);
         });
 
+        it('starts no timers after stop() while a command is being written', async () => {
+            let timersAfterStop = 0;
+            let stopped = false;
+            const c = await connect({
+                timers: {
+                    ...timers,
+                    setTimeout: (cb, ms) => {
+                        if (stopped) {
+                            timersAfterStop++;
+                        }
+                        return setTimeout(cb, ms);
+                    },
+                },
+            });
+            const sent = c.sendMany(['PW?', 'MV?', 'SI?']);
+            c.stop();
+            stopped = true;
+            await sent;
+            await new Promise(resolve => setTimeout(resolve, 100));
+            expect(timersAfterStop).to.equal(0);
+        });
+
         it('drops commands while disconnected instead of queuing them forever', async () => {
             const c = new DenonTelnetClient({
                 host: '127.0.0.1',

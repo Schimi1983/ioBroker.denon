@@ -204,6 +204,8 @@ class Denon extends utils.Adapter {
     };
 
     private zonesCreated: Record<string, boolean> = {};
+    /** Set in onUnload, no new timers afterwards */
+    private unloading = false;
     /** Last reported power of the main zone, undefined until the first answer */
     private mainZoneOn: boolean | undefined;
     /** Cache of id|value pairs already present in common.states */
@@ -313,6 +315,7 @@ class Denon extends utils.Adapter {
      */
     private onUnload(callback: () => void): void {
         try {
+            this.unloading = true;
             this.stopPoll();
             this.log.info('[END] Stopping Denon AVR adapter...');
             this.telnet?.stop();
@@ -482,6 +485,9 @@ class Denon extends utils.Adapter {
      */
     private schedulePoll(): void {
         this.stopPoll();
+        if (this.unloading) {
+            return;
+        }
         this.pollTimer = this.setTimeout(async () => {
             this.pollTimer = undefined;
             if (this.telnet?.connected) {

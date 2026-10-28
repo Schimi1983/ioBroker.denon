@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.3",
+    "version": "2.0.0-alpha.4",
     "news": {
+      "2.0.0-alpha.4": {
+        "en": "no timers while the adapter is stopping",
+        "de": "keine Timer mehr beim Beenden des Adapters",
+        "ru": "нет таймеров при остановке адаптера",
+        "pt": "sem temporizadores ao parar o adaptador",
+        "nl": "geen timers meer bij het stoppen van de adapter",
+        "fr": "plus de minuteries lors de l'arrêt de l'adaptateur",
+        "it": "nessun timer durante l'arresto dell'adattatore",
+        "es": "sin temporizadores al detener el adaptador",
+        "pl": "brak timerów podczas zatrzymywania adaptera",
+        "uk": "немає таймерів під час зупинки адаптера",
+        "zh-cn": "适配器停止时不再启动定时器"
+      },
       "2.0.0-alpha.3": {
         "en": "zone 2/3: input SOURCE is recognized, volume is sent in whole steps; settings are read again after power on",
         "de": "Zone 2/3: Eingang SOURCE wird erkannt, Lautstärke wird in ganzen Schritten gesendet; Einstellungen werden nach dem Einschalten neu gelesen",
