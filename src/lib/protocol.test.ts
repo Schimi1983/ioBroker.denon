@@ -174,8 +174,8 @@ describe('parseVideoResolution', () => {
     it('decodes the 3 digit code of the AVR-X2200W (verified live 2026-10-28)', () => {
         expect(parseVideoResolution('077')).to.deep.equal({ input: '1080p', output: '1080p' });
         expect(parseVideoResolution('088')).to.deep.equal({ input: '1080p 24Hz', output: '1080p 24Hz' });
-        expect(parseVideoResolution('099')).to.deep.equal({ input: '2160p', output: '2160p' });
-        expect(parseVideoResolution('009')).to.deep.equal({ input: 'no signal', output: '2160p' });
+        expect(parseVideoResolution('099')).to.deep.equal({ input: '2160p 24/25Hz', output: '2160p 24/25Hz' });
+        expect(parseVideoResolution('009')).to.deep.equal({ input: 'no signal', output: '2160p 24/25Hz' });
         expect(parseVideoResolution('000')).to.deep.equal({ input: 'no signal', output: 'no signal' });
         expect(parseVideoResolution('066')).to.deep.equal({ input: '720p', output: '720p' });
         expect(parseVideoResolution('022')).to.deep.equal({ input: '480p/576p', output: '480p/576p' });

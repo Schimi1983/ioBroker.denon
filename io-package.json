@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.5",
+    "version": "2.0.0-alpha.6",
     "news": {
+      "2.0.0-alpha.6": {
+        "en": "video resolution digit 9 = 2160p 24/25 Hz",
+        "de": "Auflösungs-Ziffer 9 = 2160p 24/25 Hz",
+        "ru": "цифра разрешения 9 = 2160p 24/25 Гц",
+        "pt": "dígito de resolução 9 = 2160p 24/25 Hz",
+        "nl": "resolutiecijfer 9 = 2160p 24/25 Hz",
+        "fr": "chiffre de résolution 9 = 2160p 24/25 Hz",
+        "it": "cifra di risoluzione 9 = 2160p 24/25 Hz",
+        "es": "dígito de resolución 9 = 2160p 24/25 Hz",
+        "pl": "cyfra rozdzielczości 9 = 2160p 24/25 Hz",
+        "uk": "цифра роздільної здатності 9 = 2160p 24/25 Гц",
+        "zh-cn": "分辨率数字 9 = 2160p 24/25 Hz"
+      },
       "2.0.0-alpha.5": {
         "en": "video resolution digit A = 2160p 50/60 Hz",
         "de": "Auflösungs-Ziffer A = 2160p 50/60 Hz",

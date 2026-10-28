@@ -104,7 +104,7 @@ Mit *(bei Bedarf)* gekennzeichnete States werden nur angelegt, wenn der Receiver
 | `info.audioSignalCode` | string | R | *(bei Bedarf)* Code des Audio-Eingangssignals, siehe Tabelle unten |
 | `info.audioSampleRate` | string | R | *(bei Bedarf)* Abtastrate des Audio-Eingangssignals, z. B. `48K` |
 | `info.videoResolutionCode` | string | R | *(bei Bedarf)* Rohcode der Videoauflösung (Modelle bis etwa 2016) |
-| `info.videoInputResolution` / `info.videoOutputResolution` | string | R | *(bei Bedarf)* Auflösung am HDMI-Eingang / -Ausgang, z. B. `1080p`, `1080p 24Hz`, `2160p`, `no signal` |
+| `info.videoInputResolution` / `info.videoOutputResolution` | string | R | *(bei Bedarf)* Auflösung am HDMI-Eingang / -Ausgang, z. B. `1080p`, `1080p 24Hz`, `2160p 24/25Hz`, `2160p 50/60Hz`, `no signal` |
 | `info.firmware` / `info.firmwareDts` | string | R | *(bei Bedarf)* Firmware-Version des Receivers und des DTS-Decoders |
 | `info.onlinePresets` | string | R | JSON-Array der gespeicherten Netzwerk-Favoriten (ID und Sender) |
 
@@ -117,7 +117,7 @@ Gemessene Signal-Codes eines AVR-X2200W. Die Codes hängen von der Modellgenerat
 | `03` | Dolby Digital | | `6` | 720p |
 | `04` | Dolby Digital Plus | | `7` | 1080p 50/60 Hz |
 | `05` | Dolby TrueHD (auch mit Atmos) | | `8` | 1080p 24 Hz |
-| `06` | DTS | | `9` | 2160p (4K) |
+| `06` | DTS | | `9` | 2160p 24/25 Hz |
 | `08` | DTS-HD High Resolution | | | |
 | `09` | DTS-HD Master Audio | | `A` | 2160p 50/60 Hz |
 | `12` | Umschaltung, noch kein Signal | | | |

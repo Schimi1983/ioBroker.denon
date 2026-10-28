@@ -235,6 +235,8 @@ export function formatSleepTimer(minutes: number): string | undefined {
  * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28) by switching the output mode of a media player:
  * 2 = 480p/576p, 6 = 720p, 7 = 1080p 50/60 Hz, 8 = 1080p 24 Hz, 9 = 2160p (4K), 0 = no signal.
  * A = 2160p 50/60 Hz: NVIDIA Shield set to "4K 59,940 Hz" gives "0AA" for every title (2026-10-28).
+ * 9 = 2160p 24/25 Hz: Shield with frame rate matching, 2160p24 (also HDR10) and 2160p25 both give "099".
+ * HDR has no digit of its own. The Shield never outputs below 1080p (576p/720p sources gave "077").
  * Unverified digits are reported with the raw digit instead of a guess.
  */
 export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
@@ -243,7 +245,7 @@ export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
     6: '720p',
     7: '1080p',
     8: '1080p 24Hz',
-    9: '2160p',
+    9: '2160p 24/25Hz',
     A: '2160p 50/60Hz',
 };
 

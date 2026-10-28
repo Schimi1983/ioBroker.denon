@@ -201,7 +201,7 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(await val('info.audioSampleRate')).to.equal('48K');
                 expect(await val('info.videoResolutionCode')).to.equal('009');
                 expect(await val('info.videoInputResolution')).to.equal('no signal');
-                expect(await val('info.videoOutputResolution')).to.equal('2160p');
+                expect(await val('info.videoOutputResolution')).to.equal('2160p 24/25Hz');
                 expect(await val('display.cursorLine')).to.equal(1);
             }).timeout(10_000);
 

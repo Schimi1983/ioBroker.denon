@@ -165,7 +165,7 @@ const RESOLUTION_DIGITS = {
   6: "720p",
   7: "1080p",
   8: "1080p 24Hz",
-  9: "2160p",
+  9: "2160p 24/25Hz",
   A: "2160p 50/60Hz"
 };
 function resolutionDigit(digit) {
