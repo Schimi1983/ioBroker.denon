@@ -6,6 +6,7 @@ import {
     dbToLevel,
     formatSleepTimer,
     formatVolume,
+    formatZoneVolume,
     levelToDb,
     paramOf,
     parseChannelVolume,
@@ -39,6 +40,13 @@ describe('protocol', () => {
             expect(formatVolume(5)).to.equal('05');
             expect(formatVolume(0.5)).to.equal('005');
             expect(formatVolume(0)).to.equal('00');
+        });
+
+        it('formats zone volumes in whole steps (Z2355 is ignored by the AVR-X2200W)', () => {
+            expect(formatZoneVolume(35.5)).to.equal('36');
+            expect(formatZoneVolume(35.4)).to.equal('35');
+            expect(formatZoneVolume(5)).to.equal('05');
+            expect(formatZoneVolume(120)).to.equal('98');
         });
 
         it('clamps out of range volumes', () => {

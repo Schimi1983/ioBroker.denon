@@ -18,7 +18,8 @@ const RESPONSES = {
     'DIM ?': ['DIM OFF'],
     'VSVPM ?': ['VSVPMAUTO'],
     'CV?': ['CVFL 50', 'CVFR 50', 'CVC 50', 'CVSW 50', 'CVSW2 455', 'CVSL 50', 'CVSR 50', 'CVEND'],
-    'Z2?': ['Z2OFF'],
+    'Z2?': ['Z2OFF', 'Z2SOURCE', 'Z240'],
+    Z236: ['Z236'],
     'NSFRN ?': ['NSFRN Denon AVR-X2200W'],
     'MSQUICK ?': ['MSQUICK0'],
     'Z2QUICK ?': ['Z2QUICK0'],
@@ -235,6 +236,18 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(sent).to.include('MSMCH STEREO');
                 expect(sent).to.include('DIM BRI');
                 expect(sent).to.include('VSVPMMOVI');
+            }).timeout(10_000);
+
+            it('handles zone 2 input SOURCE and whole step zone volumes (live AVR-X2200W)', async () => {
+                expect(await val('zone2.selectInput')).to.equal('SOURCE');
+                expect(await val('zone2.volume')).to.equal(40);
+                const before = avr.received.length;
+                await harness.states.setStateAsync('denon.0.zone2.volume', 35.5);
+                await wait(1_500);
+                const sent = avr.received.slice(before);
+                expect(sent).to.include('Z236');
+                expect(sent).to.not.include('Z2355');
+                expect(await val('zone2.volume')).to.equal(36);
             }).timeout(10_000);
 
             it('sends user commands with protocol formatting', async () => {

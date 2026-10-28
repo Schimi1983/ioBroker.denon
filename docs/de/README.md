@@ -131,12 +131,12 @@ Zone 2 und Zone 3 werden angelegt, sobald der Receiver sie meldet. Alle States g
 | State | Typ | R/W | Beschreibung |
 |---|---|---|---|
 | `powerZone` | boolean | R/W | Power der Zone |
-| `volume` | number | R/W | Lautstärke 0 ... 98 in 0,5er-Schritten, 80 = 0 dB |
+| `volume` | number | R/W | Lautstärke 0 ... 98, 80 = 0 dB. Hauptzone in 0,5er-Schritten, Zone 2/3 nur ganze Schritte (Werte werden gerundet) |
 | `volumeDB` | number | R/W | Lautstärke in dB, -80 ... +18 |
 | `volumeUp` / `volumeDown` | Taste | W | Lautstärke erhöhen / verringern |
 | `maximumVolume` / `maximumVolumeDB` | number | R | Maximale Lautstärke (nur Hauptzone) |
 | `muteIndicator` | boolean | R/W | Stummschaltung |
-| `selectInput` | string | R/W | Eingangsquelle, z. B. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Vom Receiver gemeldete Eingänge werden der Werteliste hinzugefügt. |
+| `selectInput` | string | R/W | Eingangsquelle, z. B. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Zone 2/3: `SOURCE` = folgt der Quelle der Hauptzone. Vom Receiver gemeldete Eingänge werden der Werteliste hinzugefügt. |
 | `quickSelect` | number | R/W | Quick Select / Smart Select 1 ... 5, `0` = keine aktiv |
 | `sleepTimer` | number | R/W | Sleep-Timer in Minuten 0 ... 120, `0` = aus |
 | `equalizerBass` / `equalizerTreble` | number | R/W | Bass / Höhen -6 ... +6 dB (Dynamic EQ aus und Klangregelung an erforderlich) |

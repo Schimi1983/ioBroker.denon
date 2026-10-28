@@ -1274,7 +1274,8 @@ function getZoneObjects(zone) {
       read: true,
       write: true,
       min: 0,
-      max: 98
+      max: 98,
+      step: 1
     },
     native: {}
   };
@@ -1346,7 +1347,8 @@ function getZoneObjects(zone) {
         AUX6: "AUX6",
         AUX7: "AUX7",
         BT: "BT",
-        USB: "USB"
+        USB: "USB",
+        SOURCE: "SOURCE (main zone)"
       }
     },
     native: {}

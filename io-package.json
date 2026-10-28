@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.2",
+    "version": "2.0.0-alpha.3",
     "news": {
+      "2.0.0-alpha.3": {
+        "en": "zone 2/3: input SOURCE is recognized, volume is sent in whole steps",
+        "de": "Zone 2/3: Eingang SOURCE wird erkannt, Lautstärke wird in ganzen Schritten gesendet",
+        "ru": "Зона 2/3: распознаётся вход SOURCE, громкость отправляется целыми шагами",
+        "pt": "Zona 2/3: a entrada SOURCE é reconhecida, o volume é enviado em passos inteiros",
+        "nl": "Zone 2/3: ingang SOURCE wordt herkend, volume wordt in hele stappen verzonden",
+        "fr": "Zone 2/3 : l'entrée SOURCE est reconnue, le volume est envoyé par pas entiers",
+        "it": "Zona 2/3: l'ingresso SOURCE viene riconosciuto, il volume viene inviato a passi interi",
+        "es": "Zona 2/3: se reconoce la entrada SOURCE, el volumen se envía en pasos enteros",
+        "pl": "Strefa 2/3: rozpoznawane jest wejście SOURCE, głośność jest wysyłana w pełnych krokach",
+        "uk": "Зона 2/3: розпізнається вхід SOURCE, гучність надсилається цілими кроками",
+        "zh-cn": "区域 2/3：可识别输入 SOURCE，音量以整数步长发送"
+      },
       "2.0.0-alpha.2": {
         "en": "Breaking: value lists of brightness, video processing mode and picture mode use protocol codes\nnew telnet transport with send queue, keepalive and reconnect with backoff\ndevice identification via HTTP (brand, model, zones)\nnew states: ECO, auto standby, DRC, restorer, input mode, signal info, sound mode buttons\nmany parser fixes, admin UI migrated to jsonConfig",
         "de": "Breaking: Wertelisten von Helligkeit, Videoverarbeitung und Bildmodus nutzen Protokoll-Codes\nneuer Telnet-Transport mit Sende-Warteschlange, Keepalive und Reconnect mit Backoff\nGeräteerkennung per HTTP (Marke, Modell, Zonen)\nneue States: ECO, Auto-Standby, DRC, Restorer, Eingangsmodus, Signal-Info, Sound-Modus-Tasten\nviele Parser-Korrekturen, Admin-Oberfläche auf jsonConfig umgestellt",

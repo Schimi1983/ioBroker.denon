@@ -942,11 +942,11 @@ class Denon extends utils.Adapter {
                 await this.sendRequest(`Z${zoneNumber}DOWN`);
                 break;
             case 'zone.volume':
-                await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
+                await this.sendRequest(`Z${zoneNumber}${protocol.formatZoneVolume(stateVal)}`);
                 break;
             case 'zone.volumeDB':
                 stateVal += 80; // Convert to Vol
-                await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
+                await this.sendRequest(`Z${zoneNumber}${protocol.formatZoneVolume(stateVal)}`);
                 break;
             case 'zone.selectInput': {
                 const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInput`);
@@ -1798,10 +1798,11 @@ class Denon extends utils.Adapter {
 
             if (command === 'Z') {
                 // If everything is removed except Z --> Volume
-                let vol = data.substring(2).replace(/\s|[A-Z]/g, '');
-                vol = `${vol.slice(0, 2)}.${vol.slice(2, 4)}`; // Slice volume from string
-                await this.setState(`zone${zoneNumber}.volume`, parseFloat(vol), true);
-                await this.setState(`zone${zoneNumber}.volumeDB`, parseFloat(vol) - 80, true);
+                const vol = protocol.parseVolume(data.substring(2));
+                if (vol !== undefined) {
+                    await this.setState(`zone${zoneNumber}.volume`, vol, true);
+                    await this.setState(`zone${zoneNumber}.volumeDB`, vol - 80, true);
+                }
                 return;
             }
             command = `Z${zoneNumber}${command.slice(1, command.length)}`;
@@ -1823,16 +1824,14 @@ class Denon extends utils.Adapter {
                 return;
             } else if (/^Z\d.*/g.test(command)) {
                 // Encode Input Source
-                const obj = await this.getObjectAsync('zoneMain.selectInput');
-                let zoneSi = data.substring(2);
-                zoneSi = zoneSi.replace(' ', ''); // Remove blank
-                for (const j of Object.keys(obj!.common.states)) {
-                    // Check if command contains one of the possible Select Inputs
-                    if (helper.decodeState(obj!.common.states, j.toString()) === zoneSi) {
-                        await this.ensureAttrInStates(`zone${zoneNumber}.selectInput`, zoneSi);
-                        await this.setState(`zone${zoneNumber}.selectInput`, zoneSi, true);
-                        return;
-                    }
+                const zoneSi = data.substring(2).replace(' ', '');
+                const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInput`);
+                const known = Object.keys(obj?.common.states ?? {}).some(k => k.toUpperCase() === zoneSi);
+                // @KI_HINWEIS: "SOURCE" = zone follows the main zone input (live AVR-X2200W: "Z2SOURCE")
+                if (known || zoneSi === 'SOURCE') {
+                    await this.ensureAttrInStates(`zone${zoneNumber}.selectInput`, zoneSi);
+                    await this.setState(`zone${zoneNumber}.selectInput`, zoneSi, true);
+                    return;
                 }
             }
         } else {

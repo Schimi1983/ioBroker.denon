@@ -145,12 +145,12 @@ Zone 2 and zone 3 are created once the receiver reports them. All states exist p
 | State | Type | R/W | Description |
 |---|---|---|---|
 | `powerZone` | boolean | R/W | Power of the zone |
-| `volume` | number | R/W | Volume 0 ... 98 in steps of 0.5, 80 = 0 dB |
+| `volume` | number | R/W | Volume 0 ... 98, 80 = 0 dB. Main zone in steps of 0.5, zone 2/3 in whole steps only (values are rounded) |
 | `volumeDB` | number | R/W | Volume in dB, -80 ... +18 |
 | `volumeUp` / `volumeDown` | button | W | Increase / decrease volume |
 | `maximumVolume` / `maximumVolumeDB` | number | R | Maximum volume (main zone only) |
 | `muteIndicator` | boolean | R/W | Mute |
-| `selectInput` | string | R/W | Input source, e.g. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Inputs reported by the receiver are added to the value list. |
+| `selectInput` | string | R/W | Input source, e.g. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Zone 2/3: `SOURCE` = follows the input of the main zone. Inputs reported by the receiver are added to the value list. |
 | `quickSelect` | number | R/W | Quick select / smart select 1 ... 5, `0` = none active |
 | `sleepTimer` | number | R/W | Sleep timer in minutes 0 ... 120, `0` = off |
 | `equalizerBass` / `equalizerTreble` | number | R/W | Bass / treble -6 ... +6 dB (Dynamic EQ off and tone control on required) |
@@ -270,6 +270,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
 * (Schimi1983) new states `info.videoInputResolution`, `info.videoOutputResolution` (decoded from the resolution code), `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
 * (Schimi1983) buttons are acknowledged after the command was sent
+* (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps because half steps are ignored by the receiver
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)
 

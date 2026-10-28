@@ -1272,6 +1272,7 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
             write: true,
             min: 0,
             max: 98,
+            step: 1,
         },
         native: {},
     };
@@ -1348,6 +1349,7 @@ export function getZoneObjects(zone: number): Record<string, ioBroker.SettableOb
                 AUX7: 'AUX7',
                 BT: 'BT',
                 USB: 'USB',
+                SOURCE: 'SOURCE (main zone)',
             },
         },
         native: {},

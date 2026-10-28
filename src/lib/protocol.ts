@@ -79,6 +79,17 @@ export function formatVolume(volume: number, max = 98): string {
 }
 
 /**
+ * Formats a zone 2/3 volume. Zones only accept whole steps.
+ *
+ * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28): "Z2355" is silently ignored, "Z235" works.
+ * Rounding to whole steps is accepted by every model, so it is done for all of them.
+ * @param volume volume, e.g. 35.5
+ */
+export function formatZoneVolume(volume: number): string {
+    return formatVolume(Math.round(volume), 98);
+}
+
+/**
  * Converts a level parameter (50 = 0 dB, half steps with three digits) to dB, e.g. "505" -> 0.5, "38" -> -12
  *
  * @param param level parameter

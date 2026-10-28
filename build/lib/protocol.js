@@ -28,6 +28,7 @@ __export(protocol_exports, {
   dbToLevel: () => dbToLevel,
   formatSleepTimer: () => formatSleepTimer,
   formatVolume: () => formatVolume,
+  formatZoneVolume: () => formatZoneVolume,
   levelToDb: () => levelToDb,
   paramOf: () => paramOf,
   parseChannelVolume: () => parseChannelVolume,
@@ -92,6 +93,9 @@ function formatVolume(volume, max = 98) {
   const whole = Math.floor(v);
   const half = v - whole === 0.5;
   return `${whole.toString().padStart(2, "0")}${half ? "5" : ""}`;
+}
+function formatZoneVolume(volume) {
+  return formatVolume(Math.round(volume), 98);
 }
 function levelToDb(param) {
   const v = parseVolume(param);
@@ -193,6 +197,7 @@ function parseVideoResolution(value) {
   dbToLevel,
   formatSleepTimer,
   formatVolume,
+  formatZoneVolume,
   levelToDb,
   paramOf,
   parseChannelVolume,

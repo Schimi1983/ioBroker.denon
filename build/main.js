@@ -889,11 +889,11 @@ class Denon extends utils.Adapter {
         await this.sendRequest(`Z${zoneNumber}DOWN`);
         break;
       case "zone.volume":
-        await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}${protocol.formatZoneVolume(stateVal)}`);
         break;
       case "zone.volumeDB":
         stateVal += 80;
-        await this.sendRequest(`Z${zoneNumber}${protocol.formatVolume(stateVal)}`);
+        await this.sendRequest(`Z${zoneNumber}${protocol.formatZoneVolume(stateVal)}`);
         break;
       case "zone.selectInput": {
         const obj = await this.getObjectAsync(`zone${zoneNumber}.selectInput`);
@@ -1630,7 +1630,7 @@ class Denon extends utils.Adapter {
    * @param data single data line
    */
   async handleResponse(data) {
-    var _a;
+    var _a, _b;
     if ((_a = this.expertRegex) == null ? void 0 : _a.test(data)) {
       await this.setState("settings.expertReadingResult", data, true);
     }
@@ -1650,10 +1650,11 @@ class Denon extends utils.Adapter {
       }
       command = data.replace(/\s+|\d+/g, "");
       if (command === "Z") {
-        let vol = data.substring(2).replace(/\s|[A-Z]/g, "");
-        vol = `${vol.slice(0, 2)}.${vol.slice(2, 4)}`;
-        await this.setState(`zone${zoneNumber2}.volume`, parseFloat(vol), true);
-        await this.setState(`zone${zoneNumber2}.volumeDB`, parseFloat(vol) - 80, true);
+        const vol = protocol.parseVolume(data.substring(2));
+        if (vol !== void 0) {
+          await this.setState(`zone${zoneNumber2}.volume`, vol, true);
+          await this.setState(`zone${zoneNumber2}.volumeDB`, vol - 80, true);
+        }
         return;
       }
       command = `Z${zoneNumber2}${command.slice(1, command.length)}`;
@@ -1671,15 +1672,13 @@ class Denon extends utils.Adapter {
         await this.setState(`zone${zoneNumber2}.quickSelect`, quickNr, true);
         return;
       } else if (/^Z\d.*/g.test(command)) {
-        const obj = await this.getObjectAsync("zoneMain.selectInput");
-        let zoneSi = data.substring(2);
-        zoneSi = zoneSi.replace(" ", "");
-        for (const j of Object.keys(obj.common.states)) {
-          if (helper.decodeState(obj.common.states, j.toString()) === zoneSi) {
-            await this.ensureAttrInStates(`zone${zoneNumber2}.selectInput`, zoneSi);
-            await this.setState(`zone${zoneNumber2}.selectInput`, zoneSi, true);
-            return;
-          }
+        const zoneSi = data.substring(2).replace(" ", "");
+        const obj = await this.getObjectAsync(`zone${zoneNumber2}.selectInput`);
+        const known = Object.keys((_b = obj == null ? void 0 : obj.common.states) != null ? _b : {}).some((k) => k.toUpperCase() === zoneSi);
+        if (known || zoneSi === "SOURCE") {
+          await this.ensureAttrInStates(`zone${zoneNumber2}.selectInput`, zoneSi);
+          await this.setState(`zone${zoneNumber2}.selectInput`, zoneSi, true);
+          return;
         }
       }
     } else {
