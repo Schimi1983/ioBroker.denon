@@ -104,6 +104,7 @@ Mit *(bei Bedarf)* gekennzeichnete States werden nur angelegt, wenn der Receiver
 | `info.audioSignalCode` | string | R | *(bei Bedarf)* Code des Audio-Eingangssignals. Modellabhängig, z. B. AVR-X2200W: `02` PCM, `05` Dolby TrueHD, `06` DTS, `09` DTS-HD |
 | `info.audioSampleRate` | string | R | *(bei Bedarf)* Abtastrate des Audio-Eingangssignals, z. B. `48K` |
 | `info.videoResolutionCode` | string | R | *(bei Bedarf)* Code der Videoauflösung (modellabhängig) |
+| `info.firmware` / `info.firmwareDts` | string | R | *(bei Bedarf)* Firmware-Version des Receivers und des DTS-Decoders |
 | `info.onlinePresets` | string | R | JSON-Array der gespeicherten Netzwerk-Favoriten (ID und Sender) |
 
 ### Kanal: zoneMain / zone2 / zone3
@@ -139,6 +140,7 @@ setState('denon.0.zoneMain.selectInput', 'TV'); // Eingang TV wählen
 | `powerSystem` | boolean | R/W | Systemstrom (an / Standby) |
 | `surroundMode` | string | R/W | Surround-Modus wie vom Receiver gemeldet, z. B. `STEREO`, `DOLBY SURROUND`, `DTS HD+NEURAL:X`. Neue Modi werden automatisch der Werteliste hinzugefügt |
 | `soundModeMovie` / `soundModeMusic` / `soundModeGame` / `soundModeDirect` / `soundModePureDirect` / `soundModeStereo` / `soundModeAuto` | Taste | W | Wählt eine Gruppe von Surround-Modi; der Receiver nimmt den besten Modus der Gruppe für das aktuelle Signal |
+| `soundModeGroup` | string | R | *(bei Bedarf)* Aktive Gruppe der Surround-Modi: `MOV` (Film), `MUS` (Musik), `GAM` (Spiel), `PUR` (Pure) |
 | `dynamicEq` | boolean | R/W | Audyssey Dynamic EQ |
 | `multEq` | string | R/W | MultEQ: `OFF`, `AUDYSSEY`, `BYP.LR`, `FLAT`, `MANUAL` |
 | `dynamicVolume` | string | R/W | Dynamic Volume: `OFF`, `LIT`, `MED`, `HEV` |
@@ -160,6 +162,8 @@ setState('denon.0.zoneMain.selectInput', 'TV'); // Eingang TV wählen
 | `digitalInputMode` | string | R/W | *(bei Bedarf)* Digital-Eingangsmodus: `AUTO`, `PCM`, `DTS` |
 | `outputMonitor` | number | R/W | *(bei Bedarf)* HDMI-Ausgang bei Receivern mit zwei Ausgängen: `0` automatisch, `1`, `2` |
 | `videoProcessingMode` | string | R/W | *(bei Bedarf)* Videoverarbeitung: `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `hdmiResolution` / `analogResolution` | string | R/W | *(bei Bedarf)* Ausgangsauflösung der Videoumwandlung (HDMI / analog): `48P`, `10I`, `72P`, `10P`, `10P24`, `4K`, `4KF`, `AUTO` |
+| `aspectRatio` | string | R/W | *(bei Bedarf)* Seitenverhältnis: `NRM` (4:3), `FUL` (16:9) |
 | `pictureMode` | string | R/W | *(bei Bedarf)* Bildmodus: `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
 | `speakerPreset` | number | R/W | *(bei Bedarf)* Lautsprecher-Preset `1` oder `2` |
 | `setupMenu` | boolean | R/W | Öffnet / schließt das Setup-Menü |

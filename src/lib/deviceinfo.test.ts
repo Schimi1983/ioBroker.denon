@@ -104,3 +104,20 @@ describe('settings', () => {
         expect(new Set(prefixes).size).to.equal(prefixes.length);
     });
 });
+
+describe('settings (video and sound mode group)', () => {
+    it('distinguishes VSSCH (HDMI) from VSSC (analog)', () => {
+        expect(findEnumSetting('VSSCH4K')).to.deep.include({ value: '4K' });
+        expect(findEnumSetting('VSSCH4K')?.setting.id).to.equal('settings.hdmiResolution');
+        expect(findEnumSetting('VSSCAUTO')?.setting.id).to.equal('settings.analogResolution');
+        expect(findEnumSetting('VSSCH10P24')).to.deep.include({ value: '10P24' });
+    });
+
+    it('maps aspect ratio and sound mode group (live AVR-X2200W)', () => {
+        expect(findEnumSetting('VSASPFUL')?.setting.id).to.equal('settings.aspectRatio');
+        const smg = findEnumSetting('SSSMG MOV');
+        expect(smg?.setting.id).to.equal('settings.soundModeGroup');
+        expect(smg?.value).to.equal('MOV');
+        expect(smg?.setting.write).to.equal(false);
+    });
+});

@@ -22,6 +22,8 @@ __export(settings_exports, {
   DEVICE_INFO_STATES: () => DEVICE_INFO_STATES,
   ENUM_SETTINGS: () => ENUM_SETTINGS,
   ENUM_SETTINGS_BY_ID: () => ENUM_SETTINGS_BY_ID,
+  FIRMWARE_QUERY: () => FIRMWARE_QUERY,
+  FIRMWARE_STATES: () => FIRMWARE_STATES,
   SIGNAL_INFO_QUERIES: () => SIGNAL_INFO_QUERIES,
   SIGNAL_INFO_STATES: () => SIGNAL_INFO_STATES,
   SOUND_MODE_BUTTONS: () => SOUND_MODE_BUTTONS,
@@ -31,6 +33,57 @@ __export(settings_exports, {
 });
 module.exports = __toCommonJS(settings_exports);
 const ENUM_SETTINGS = [
+  {
+    id: "settings.hdmiResolution",
+    prefix: "VSSCH",
+    separator: "",
+    query: "VSSCH ?",
+    name: "HDMI output resolution (video conversion)",
+    states: {
+      "48P": "480p/576p",
+      "10I": "1080i",
+      "72P": "720p",
+      "10P": "1080p",
+      "10P24": "1080p 24 Hz",
+      "4K": "4K",
+      "4KF": "4K 60/50 Hz",
+      AUTO: "Auto"
+    }
+  },
+  {
+    id: "settings.analogResolution",
+    prefix: "VSSC",
+    separator: "",
+    query: "VSSC ?",
+    name: "Analog video output resolution",
+    states: {
+      "48P": "480p/576p",
+      "10I": "1080i",
+      "72P": "720p",
+      "10P": "1080p",
+      "10P24": "1080p 24 Hz",
+      "4K": "4K",
+      "4KF": "4K 60/50 Hz",
+      AUTO: "Auto"
+    }
+  },
+  {
+    id: "settings.aspectRatio",
+    prefix: "VSASP",
+    separator: "",
+    query: "VSASP ?",
+    name: "Aspect ratio",
+    states: { NRM: "4:3", FUL: "16:9" }
+  },
+  {
+    id: "settings.soundModeGroup",
+    prefix: "SSSMG",
+    separator: " ",
+    query: "SSSMG ?",
+    name: "Active sound mode group",
+    states: { MOV: "Movie", MUS: "Music", GAM: "Game", PUR: "Pure" },
+    write: false
+  },
   {
     id: "settings.dynamicCompression",
     prefix: "PSDRC",
@@ -109,7 +162,7 @@ function enumSettingObject(setting) {
       role: "level.mode",
       type: "string",
       read: true,
-      write: true,
+      write: setting.write !== false,
       states: { ...setting.states }
     },
     native: { command: setting.prefix }
@@ -157,6 +210,25 @@ const SIGNAL_INFO_STATES = {
         read: true,
         write: false
       },
+      native: {}
+    }
+  }
+};
+const FIRMWARE_QUERY = "SSINFFRM ?";
+const FIRMWARE_STATES = {
+  FRMAVR: {
+    id: "info.firmware",
+    obj: {
+      type: "state",
+      common: { name: "Firmware version", role: "info.firmware", type: "string", read: true, write: false },
+      native: {}
+    }
+  },
+  FRMDTS: {
+    id: "info.firmwareDts",
+    obj: {
+      type: "state",
+      common: { name: "DTS decoder version", role: "info.firmware", type: "string", read: true, write: false },
       native: {}
     }
   }
@@ -224,6 +296,8 @@ function soundModeButtonObjects() {
   DEVICE_INFO_STATES,
   ENUM_SETTINGS,
   ENUM_SETTINGS_BY_ID,
+  FIRMWARE_QUERY,
+  FIRMWARE_STATES,
   SIGNAL_INFO_QUERIES,
   SIGNAL_INFO_STATES,
   SOUND_MODE_BUTTONS,

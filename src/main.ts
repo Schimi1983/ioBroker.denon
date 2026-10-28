@@ -8,6 +8,8 @@ import {
     ENUM_SETTINGS,
     ENUM_SETTINGS_BY_ID,
     enumSettingObject,
+    FIRMWARE_QUERY,
+    FIRMWARE_STATES,
     findEnumSetting,
     SIGNAL_INFO_QUERIES,
     SIGNAL_INFO_STATES,
@@ -41,8 +43,6 @@ class Denon extends utils.Adapter {
         'Z3?',
         'Z3MU?',
         'NSE',
-        'VSSC ?',
-        'VSASP ?',
         'VSMONI ?',
         'TR?',
         'DIM ?',
@@ -388,7 +388,12 @@ class Denon extends utils.Adapter {
         const cmds =
             this.receiverType === 'US'
                 ? [...this.updateCommands, ...this.usUpdateCommands]
-                : [...this.updateCommands, ...ENUM_SETTINGS.map(setting => setting.query), ...SIGNAL_INFO_QUERIES];
+                : [
+                      ...this.updateCommands,
+                      ...ENUM_SETTINGS.map(setting => setting.query),
+                      ...SIGNAL_INFO_QUERIES,
+                      FIRMWARE_QUERY,
+                  ];
         return cmds.filter(cmd => {
             const zone = /^Z(\d)/.exec(cmd);
             if (zone && zones !== undefined && parseInt(zone[1], 10) > zones) {
@@ -583,6 +588,10 @@ class Denon extends utils.Adapter {
         }
 
         const enumSetting = ENUM_SETTINGS_BY_ID.get(id);
+        if (enumSetting?.write === false) {
+            this.log.warn(`[COMMAND] ${id} is read only`);
+            return;
+        }
         if (enumSetting) {
             const obj = await this.getObjectAsync(id);
             await this.sendKeyed(`${enumSetting.prefix}${enumSetting.separator}`, obj, stateVal, id);
@@ -1695,11 +1704,15 @@ class Denon extends utils.Adapter {
         // Signal information, e.g. "SSINFAISFSV 48K"
         if (data.startsWith('SSINF')) {
             const info = protocol.parseSignalInfo(data);
-            const target = info ? SIGNAL_INFO_STATES[info.key] : undefined;
-            if (info && target) {
+            const signal = info ? SIGNAL_INFO_STATES[info.key] : undefined;
+            const firmware = info ? FIRMWARE_STATES[info.key] : undefined;
+            if (info && signal) {
                 this.signalInfoSupported = true;
-                await this.ensureObject(target.id, target.obj);
-                await this.setStateChangedAsync(target.id, info.value, true);
+                await this.ensureObject(signal.id, signal.obj);
+                await this.setStateChangedAsync(signal.id, info.value, true);
+            } else if (info && firmware) {
+                await this.ensureObject(firmware.id, firmware.obj);
+                await this.setStateChangedAsync(firmware.id, info.value, true);
             } else {
                 this.log.debug(`[INFO] <== Unknown signal info: ${data}`);
             }

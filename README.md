@@ -118,6 +118,7 @@ Values marked with *(on demand)* are only created if the receiver answers the re
 | `info.audioSignalCode` | string | R | *(on demand)* Code of the audio input signal. Model specific, e.g. AVR-X2200W: `02` PCM, `05` Dolby TrueHD, `06` DTS, `09` DTS-HD |
 | `info.audioSampleRate` | string | R | *(on demand)* Sample rate of the audio input signal, e.g. `48K` |
 | `info.videoResolutionCode` | string | R | *(on demand)* Code of the video resolution (model specific) |
+| `info.firmware` / `info.firmwareDts` | string | R | *(on demand)* Firmware version of the receiver and of the DTS decoder |
 | `info.onlinePresets` | string | R | JSON array of the saved network audio favorites (id and channel) |
 
 ### Channel: zoneMain / zone2 / zone3
@@ -153,6 +154,7 @@ setState('denon.0.zoneMain.selectInput', 'TV'); // select input TV
 | `powerSystem` | boolean | R/W | System power (on / standby) |
 | `surroundMode` | string | R/W | Surround mode as reported by the receiver, e.g. `STEREO`, `DOLBY SURROUND`, `DTS HD+NEURAL:X`. New modes are added to the value list automatically |
 | `soundModeMovie` / `soundModeMusic` / `soundModeGame` / `soundModeDirect` / `soundModePureDirect` / `soundModeStereo` / `soundModeAuto` | button | W | Select a surround mode group; the receiver picks the best mode of the group for the current signal |
+| `soundModeGroup` | string | R | *(on demand)* Active surround mode group: `MOV` (movie), `MUS` (music), `GAM` (game), `PUR` (pure) |
 | `dynamicEq` | boolean | R/W | Audyssey Dynamic EQ |
 | `multEq` | string | R/W | MultEQ: `OFF`, `AUDYSSEY`, `BYP.LR`, `FLAT`, `MANUAL` |
 | `dynamicVolume` | string | R/W | Dynamic volume: `OFF`, `LIT`, `MED`, `HEV` |
@@ -174,6 +176,8 @@ setState('denon.0.zoneMain.selectInput', 'TV'); // select input TV
 | `digitalInputMode` | string | R/W | *(on demand)* Digital input mode: `AUTO`, `PCM`, `DTS` |
 | `outputMonitor` | number | R/W | *(on demand)* HDMI output for receivers with two outputs: `0` auto, `1`, `2` |
 | `videoProcessingMode` | string | R/W | *(on demand)* Video processing: `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `hdmiResolution` / `analogResolution` | string | R/W | *(on demand)* Output resolution of the video conversion (HDMI / analog): `48P`, `10I`, `72P`, `10P`, `10P24`, `4K`, `4KF`, `AUTO` |
+| `aspectRatio` | string | R/W | *(on demand)* Aspect ratio: `NRM` (4:3), `FUL` (16:9) |
 | `pictureMode` | string | R/W | *(on demand)* Picture mode: `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
 | `speakerPreset` | number | R/W | *(on demand)* Speaker preset `1` or `2` |
 | `setupMenu` | boolean | R/W | Opens / closes the setup menu |
@@ -247,6 +251,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) queries of multi zone amplifiers (POA-3012CI) are only sent to such devices, the initial update of AV receivers is about twice as fast
 * (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported); queries for missing zones and for the quick select variant of the other brand are skipped
 * (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
+* (Schimi1983) new states `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
 * (Schimi1983) buttons are acknowledged after the command was sent
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)

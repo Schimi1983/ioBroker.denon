@@ -33,7 +33,12 @@ const RESPONSES = {
     'SSINFAISSIG ?': ['SSINFAISSIG 02'],
     'SSINFAISFSV ?': ['SSINFAISFSV 48K'],
     'SSINFSIGRES ?': ['SSINFSIGRES 009'],
-    MSMOVIE: ['MSDOLBY SURROUND'],
+    MSMOVIE: ['MSDOLBY SURROUND', 'SSSMG MOV'],
+    'VSSCH ?': ['VSSCH4K'],
+    'VSSC ?': ['VSSCAUTO'],
+    'VSASP ?': ['VSASPFUL'],
+    'SSSMG ?': ['SSSMG MUS'],
+    'SSINFFRM ?': ['SSINFFRMAVR 4700-0591-4030', 'SSINFFRMDTS 3.90.50.00'],
     NSE: [
         `NSE0Online Music${' '.repeat(84)}`,
         `NSE1\nFavorites${' '.repeat(86)}`,
@@ -180,6 +185,15 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(await val('settings.digitalInputMode')).to.equal('AUTO');
             }).timeout(10_000);
 
+            it('reads firmware, video settings and the sound mode group', async () => {
+                expect(await val('info.firmware')).to.equal('4700-0591-4030');
+                expect(await val('info.firmwareDts')).to.equal('3.90.50.00');
+                expect(await val('settings.hdmiResolution')).to.equal('4K');
+                expect(await val('settings.analogResolution')).to.equal('AUTO');
+                expect(await val('settings.aspectRatio')).to.equal('FUL');
+                expect(await val('settings.soundModeGroup')).to.equal('MUS');
+            }).timeout(10_000);
+
             it('stores signal information and the display cursor line', async () => {
                 expect(await val('info.audioSignalCode')).to.equal('02');
                 expect(await val('info.audioSampleRate')).to.equal('48K');
@@ -192,13 +206,16 @@ tests.integration(path.join(__dirname, '..'), {
                 await harness.states.setStateAsync('denon.0.settings.ecoMode', 'Off');
                 await harness.states.setStateAsync('denon.0.settings.autoStandby', '60M');
                 await harness.states.setStateAsync('denon.0.settings.dynamicCompression', 'AUTO');
+                await harness.states.setStateAsync('denon.0.settings.hdmiResolution', '1080p 24 Hz');
                 await harness.states.setStateAsync('denon.0.settings.soundModeMovie', true);
                 await wait(1_500);
                 const sent = avr.received.slice(before);
                 expect(sent).to.include('ECOOFF');
                 expect(sent).to.include('STBY60M');
                 expect(sent).to.include('PSDRC AUTO');
+                expect(sent).to.include('VSSCH10P24');
                 expect(sent).to.include('MSMOVIE');
+                expect(await val('settings.soundModeGroup')).to.equal('MOV');
                 expect(await val('settings.surroundMode')).to.equal('DOLBY SURROUND');
                 const button = await harness.states.getStateAsync('denon.0.settings.soundModeMovie');
                 expect(button.ack, 'button is acknowledged').to.equal(true);

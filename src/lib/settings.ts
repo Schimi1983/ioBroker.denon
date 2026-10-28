@@ -17,10 +17,67 @@ export interface EnumSetting {
     name: string;
     /** Value list, key = protocol value */
     states: Record<string, string>;
+    /** false for values the AVR only reports (default: writable) */
+    write?: boolean;
 }
 
-/** Settings handled generically, sorted so that longer prefixes are checked first */
+/**
+ * Settings handled generically.
+ *
+ * @KI_HINWEIS: Order matters, a prefix which is the beginning of another prefix (VSSC / VSSCH) must come after it.
+ */
 export const ENUM_SETTINGS: readonly EnumSetting[] = [
+    {
+        id: 'settings.hdmiResolution',
+        prefix: 'VSSCH',
+        separator: '',
+        query: 'VSSCH ?',
+        name: 'HDMI output resolution (video conversion)',
+        states: {
+            '48P': '480p/576p',
+            '10I': '1080i',
+            '72P': '720p',
+            '10P': '1080p',
+            '10P24': '1080p 24 Hz',
+            '4K': '4K',
+            '4KF': '4K 60/50 Hz',
+            AUTO: 'Auto',
+        },
+    },
+    {
+        id: 'settings.analogResolution',
+        prefix: 'VSSC',
+        separator: '',
+        query: 'VSSC ?',
+        name: 'Analog video output resolution',
+        states: {
+            '48P': '480p/576p',
+            '10I': '1080i',
+            '72P': '720p',
+            '10P': '1080p',
+            '10P24': '1080p 24 Hz',
+            '4K': '4K',
+            '4KF': '4K 60/50 Hz',
+            AUTO: 'Auto',
+        },
+    },
+    {
+        id: 'settings.aspectRatio',
+        prefix: 'VSASP',
+        separator: '',
+        query: 'VSASP ?',
+        name: 'Aspect ratio',
+        states: { NRM: '4:3', FUL: '16:9' },
+    },
+    {
+        id: 'settings.soundModeGroup',
+        prefix: 'SSSMG',
+        separator: ' ',
+        query: 'SSSMG ?',
+        name: 'Active sound mode group',
+        states: { MOV: 'Movie', MUS: 'Music', GAM: 'Game', PUR: 'Pure' },
+        write: false,
+    },
     {
         id: 'settings.dynamicCompression',
         prefix: 'PSDRC',
@@ -113,7 +170,7 @@ export function enumSettingObject(setting: EnumSetting): ioBroker.SettableStateO
             role: 'level.mode',
             type: 'string',
             read: true,
-            write: true,
+            write: setting.write !== false,
             states: { ...setting.states },
         },
         native: { command: setting.prefix },
@@ -165,6 +222,29 @@ export const SIGNAL_INFO_STATES: Record<string, { id: string; obj: ioBroker.Sett
                 read: true,
                 write: false,
             },
+            native: {},
+        },
+    },
+};
+
+/** Query for the firmware versions, only sent once at startup */
+export const FIRMWARE_QUERY = 'SSINFFRM ?';
+
+/** SSINFFRM key -> state id and object (answer e.g. "SSINFFRMAVR 4700-0591-4030") */
+export const FIRMWARE_STATES: Record<string, { id: string; obj: ioBroker.SettableStateObject }> = {
+    FRMAVR: {
+        id: 'info.firmware',
+        obj: {
+            type: 'state',
+            common: { name: 'Firmware version', role: 'info.firmware', type: 'string', read: true, write: false },
+            native: {},
+        },
+    },
+    FRMDTS: {
+        id: 'info.firmwareDts',
+        obj: {
+            type: 'state',
+            common: { name: 'DTS decoder version', role: 'info.firmware', type: 'string', read: true, write: false },
             native: {},
         },
     },
