@@ -119,7 +119,7 @@ Gemessene Signal-Codes eines AVR-X2200W. Die Codes hängen von der Modellgenerat
 | `05` | Dolby TrueHD (auch mit Atmos) | | `8` | 1080p 24 Hz |
 | `06` | DTS | | `9` | 2160p (4K) |
 | `08` | DTS-HD High Resolution | | | |
-| `09` | DTS-HD Master Audio | | | |
+| `09` | DTS-HD Master Audio | | `A` | 2160p 50/60 Hz |
 | `12` | Umschaltung, noch kein Signal | | | |
 
 Der Video-Code besteht aus `0`, der Ziffer für den Eingang und der Ziffer für den Ausgang, z. B. `088` = 1080p 24 Hz ein und aus, `009` = kein Eingang (TV über ARC), Ausgang 4K.

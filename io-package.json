@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.4",
+    "version": "2.0.0-alpha.5",
     "news": {
+      "2.0.0-alpha.5": {
+        "en": "video resolution digit A = 2160p 50/60 Hz",
+        "de": "Auflösungs-Ziffer A = 2160p 50/60 Hz",
+        "ru": "цифра разрешения A = 2160p 50/60 Гц",
+        "pt": "dígito de resolução A = 2160p 50/60 Hz",
+        "nl": "resolutiecijfer A = 2160p 50/60 Hz",
+        "fr": "chiffre de résolution A = 2160p 50/60 Hz",
+        "it": "cifra di risoluzione A = 2160p 50/60 Hz",
+        "es": "dígito de resolución A = 2160p 50/60 Hz",
+        "pl": "cyfra rozdzielczości A = 2160p 50/60 Hz",
+        "uk": "цифра роздільної здатності A = 2160p 50/60 Гц",
+        "zh-cn": "分辨率数字 A = 2160p 50/60 Hz"
+      },
       "2.0.0-alpha.4": {
         "en": "no timers while the adapter is stopping",
         "de": "keine Timer mehr beim Beenden des Adapters",

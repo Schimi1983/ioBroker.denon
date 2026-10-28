@@ -234,7 +234,7 @@ export function formatSleepTimer(minutes: number): string | undefined {
  *
  * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28) by switching the output mode of a media player:
  * 2 = 480p/576p, 6 = 720p, 7 = 1080p 50/60 Hz, 8 = 1080p 24 Hz, 9 = 2160p (4K), 0 = no signal.
- * "A" only showed up shortly after power on and while the player switched modes, its meaning is unclear.
+ * A = 2160p 50/60 Hz: NVIDIA Shield set to "4K 59,940 Hz" gives "0AA" for every title (2026-10-28).
  * Unverified digits are reported with the raw digit instead of a guess.
  */
 export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
@@ -244,6 +244,7 @@ export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
     7: '1080p',
     8: '1080p 24Hz',
     9: '2160p',
+    A: '2160p 50/60Hz',
 };
 
 /** Parsed video resolution */

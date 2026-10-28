@@ -181,8 +181,12 @@ describe('parseVideoResolution', () => {
         expect(parseVideoResolution('022')).to.deep.equal({ input: '480p/576p', output: '480p/576p' });
     });
 
+    it('decodes A as 2160p 50/60 Hz (NVIDIA Shield at 4K 59.94 Hz)', () => {
+        expect(parseVideoResolution('0AA')).to.deep.equal({ input: '2160p 50/60Hz', output: '2160p 50/60Hz' });
+    });
+
     it('reports digits which are not verified yet with the raw digit', () => {
-        expect(parseVideoResolution('0AA')).to.deep.equal({ input: 'unknown (A)', output: 'unknown (A)' });
+        expect(parseVideoResolution('033')).to.deep.equal({ input: 'unknown (3)', output: 'unknown (3)' });
     });
 
     it('decodes the I/O format of newer models', () => {
