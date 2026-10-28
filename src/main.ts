@@ -537,7 +537,35 @@ class Denon extends utils.Adapter {
         if (!id || !state || state.ack || state.val === null) {
             return;
         }
+        await this.handleCommand(id, state);
+        await this.acknowledgeButton(id, state.val);
+    }
 
+    /**
+     * Buttons have no feedback from the AVR, so they are acknowledged once the command was queued.
+     * Otherwise they stay unacknowledged (shown red in admin) forever.
+     *
+     * @param fullId full state id
+     * @param val written value
+     */
+    private async acknowledgeButton(fullId: string, val: ioBroker.StateValue): Promise<void> {
+        try {
+            const obj = await this.getObjectAsync(fullId);
+            if (obj?.type === 'state' && obj.common.role === 'button') {
+                await this.setState(fullId, val, true);
+            }
+        } catch (e) {
+            this.log.debug(`Could not acknowledge ${fullId}: ${(e as Error).message}`);
+        }
+    }
+
+    /**
+     * Translates a state change of the user into protocol commands
+     *
+     * @param id full state id
+     * @param state the new (unacknowledged) state
+     */
+    private async handleCommand(id: string, state: ioBroker.State): Promise<void> {
         id = id.substring(this.namespace.length + 1); // remove instance name and id
         let stateVal: any = state.val; // only get state value
 

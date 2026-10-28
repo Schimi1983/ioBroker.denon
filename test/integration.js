@@ -200,6 +200,8 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(sent).to.include('PSDRC AUTO');
                 expect(sent).to.include('MSMOVIE');
                 expect(await val('settings.surroundMode')).to.equal('DOLBY SURROUND');
+                const button = await harness.states.getStateAsync('denon.0.settings.soundModeMovie');
+                expect(button.ack, 'button is acknowledged').to.equal(true);
             }).timeout(10_000);
 
             it('accepts index values written by scripts for version 1.x', async () => {
