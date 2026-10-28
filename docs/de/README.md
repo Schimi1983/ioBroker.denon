@@ -113,10 +113,11 @@ Gemessene Signal-Codes eines AVR-X2200W. Die Codes hängen von der Modellgenerat
 | `audioSignalCode` | Signal | | Ziffer `videoResolutionCode` | Auflösung |
 |---|---|---|---|---|
 | `01` | Standby / analog | | `0` | kein Signal |
-| `02` | PCM | | `7` | 1080p 50/60 Hz |
-| `03` | Dolby Digital | | `8` | 1080p 24 Hz |
-| `05` | Dolby TrueHD | | `9` | 2160p (4K) |
-| `06` | DTS | | | |
+| `02` | PCM | | `2` | 480p/576p |
+| `03` | Dolby Digital | | `6` | 720p |
+| `04` | Dolby Digital Plus | | `7` | 1080p 50/60 Hz |
+| `05` | Dolby TrueHD | | `8` | 1080p 24 Hz |
+| `06` | DTS | | `9` | 2160p (4K) |
 | `09` | DTS-HD | | | |
 | `12` | Umschaltung, noch kein Signal | | | |
 

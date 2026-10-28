@@ -169,10 +169,12 @@ describe('parseVideoResolution', () => {
         expect(parseVideoResolution('099')).to.deep.equal({ input: '2160p', output: '2160p' });
         expect(parseVideoResolution('009')).to.deep.equal({ input: 'no signal', output: '2160p' });
         expect(parseVideoResolution('000')).to.deep.equal({ input: 'no signal', output: 'no signal' });
+        expect(parseVideoResolution('066')).to.deep.equal({ input: '720p', output: '720p' });
+        expect(parseVideoResolution('022')).to.deep.equal({ input: '480p/576p', output: '480p/576p' });
     });
 
     it('reports digits which are not verified yet with the raw digit', () => {
-        expect(parseVideoResolution('066')).to.deep.equal({ input: 'unknown (6)', output: 'unknown (6)' });
+        expect(parseVideoResolution('0AA')).to.deep.equal({ input: 'unknown (A)', output: 'unknown (A)' });
     });
 
     it('decodes the I/O format of newer models', () => {

@@ -221,13 +221,15 @@ export function formatSleepTimer(minutes: number): string | undefined {
 /**
  * Resolution digits of the 3 digit SSINFSIGRES code (models around 2015, e.g. AVR-X2200W).
  *
- * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28) with a media player as source:
- * 7 = 1080p 50/60 Hz, 8 = 1080p 24 Hz, 9 = 2160p (4K), 0 = no signal. The remaining digits follow the order of
- * the resolution list of the protocol (VSSC: 480p/576p, 1080i, 720p, 1080p, 1080p:24Hz, 4K, 4K 60/50) and are
- * not verified yet, therefore they are reported with the raw digit.
+ * @KI_HINWEIS: Verified live on an AVR-X2200W (2026-10-28) by switching the output mode of a media player:
+ * 2 = 480p/576p, 6 = 720p, 7 = 1080p 50/60 Hz, 8 = 1080p 24 Hz, 9 = 2160p (4K), 0 = no signal.
+ * "A" only showed up shortly after power on and while the player switched modes, its meaning is unclear.
+ * Unverified digits are reported with the raw digit instead of a guess.
  */
 export const RESOLUTION_DIGITS: Readonly<Record<string, string>> = {
     0: 'no signal',
+    2: '480p/576p',
+    6: '720p',
     7: '1080p',
     8: '1080p 24Hz',
     9: '2160p',

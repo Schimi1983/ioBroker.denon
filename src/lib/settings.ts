@@ -188,7 +188,7 @@ export const SIGNAL_INFO_STATES: Record<string, { id: string; obj: ioBroker.Sett
             type: 'state',
             common: {
                 name: 'Audio input signal (raw code, model specific)',
-                desc: 'AVR-X2200W: 02 = PCM, 05 = Dolby TrueHD, 06 = DTS, 09 = DTS-HD',
+                desc: 'AVR-X2200W: 02 PCM, 03 Dolby Digital, 04 Dolby Digital Plus, 05 Dolby TrueHD, 06 DTS, 09 DTS-HD, 12 switching',
                 role: 'text',
                 type: 'string',
                 read: true,

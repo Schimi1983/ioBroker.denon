@@ -157,6 +157,8 @@ function formatSleepTimer(minutes) {
 }
 const RESOLUTION_DIGITS = {
   0: "no signal",
+  2: "480p/576p",
+  6: "720p",
   7: "1080p",
   8: "1080p 24Hz",
   9: "2160p"
