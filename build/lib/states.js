@@ -163,10 +163,10 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Tuner Frequency",
-      role: "value",
+      role: "level",
       type: "number",
       write: true,
-      read: false
+      read: true
     },
     native: {}
   },
@@ -331,7 +331,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Maximum Volume",
-      role: "state",
+      role: "value",
       type: "number",
       write: false,
       read: true
@@ -355,7 +355,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Quick select",
-      role: "media.quickSelect",
+      role: "level",
       type: "number",
       write: true,
       read: true,
@@ -462,7 +462,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Main Volume DB",
-      role: "level.volume.main",
+      role: "level",
       type: "number",
       read: true,
       write: true,
@@ -477,7 +477,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Maximum Volume DB",
-      role: "state",
+      role: "value",
       type: "number",
       write: false,
       read: true,
@@ -589,7 +589,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Mult EQ",
-      role: "level",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -608,7 +608,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Dynamic Volume",
-      role: "level",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -626,7 +626,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Reference Level Offset",
-      role: "level",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -660,7 +660,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -672,7 +672,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -684,7 +684,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -696,7 +696,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -708,7 +708,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -720,7 +720,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -732,7 +732,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -744,7 +744,7 @@ const commonCommands = [
       role: "button",
       type: "boolean",
       write: true,
-      read: true
+      read: false
     },
     native: {}
   },
@@ -777,7 +777,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Net Audio Presets",
-      role: "presets.json",
+      role: "json",
       type: "string",
       write: false,
       read: true,
@@ -790,7 +790,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Save Net Audio Preset",
-      role: "presets.save",
+      role: "state",
       type: "string",
       write: true,
       read: true
@@ -802,7 +802,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Load Net Audio Preset",
-      role: "presets.load",
+      role: "state",
       type: "string",
       write: true,
       read: true
@@ -829,7 +829,7 @@ const commonCommands = [
     type: "state",
     common: {
       name: "Dialog Level Adjustment",
-      role: "indicator",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -938,7 +938,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Operation Mode",
-      role: "media.mode",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -954,7 +954,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Speaker One Channel Low Cut Filter",
-      role: "media.switch",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -966,7 +966,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Speaker Two Channel Low Cut Filter",
-      role: "media.switch",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -978,7 +978,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Zone Turn On Mode Change",
-      role: "media.status",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -996,7 +996,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Zone Trigger Input",
-      role: "media.input",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -1008,7 +1008,7 @@ const usCommandsZone = [
     type: "state",
     common: {
       name: "Channel Audio Signal Input",
-      role: "media.input",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -1022,7 +1022,7 @@ const usCommands = [
     type: "state",
     common: {
       name: "Power Configuration Change",
-      role: "media.status",
+      role: "state",
       type: "string",
       write: true,
       read: true,
@@ -1039,7 +1039,7 @@ const usCommands = [
     type: "state",
     common: {
       name: "Master Trigger Input",
-      role: "media.status",
+      role: "switch",
       type: "boolean",
       write: true,
       read: true
@@ -1269,7 +1269,7 @@ function getZoneObjects(zone) {
     type: "state",
     common: {
       name: `Zone ${zone} Volume`,
-      role: "level.volume.zone",
+      role: "level.volume",
       type: "number",
       read: true,
       write: true,
@@ -1283,7 +1283,7 @@ function getZoneObjects(zone) {
     type: "state",
     common: {
       name: `Zone ${zone} VolumeDB`,
-      role: "level.volume",
+      role: "level",
       type: "number",
       unit: "dB",
       read: true,
@@ -1368,7 +1368,7 @@ function getZoneObjects(zone) {
     type: "state",
     common: {
       name: `Zone ${zone} Quick select`,
-      role: "media.quickSelect",
+      role: "level",
       type: "number",
       write: true,
       read: true,
@@ -1381,7 +1381,7 @@ function getZoneObjects(zone) {
     type: "state",
     common: {
       name: `Zone ${zone} Sleep Timer`,
-      role: "media.timer.sleep",
+      role: "level.timer.sleep",
       unit: "min",
       type: "number",
       write: true,

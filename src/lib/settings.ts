@@ -167,7 +167,9 @@ export function enumSettingObject(setting: EnumSetting): ioBroker.SettableStateO
         type: 'state',
         common: {
             name: setting.name,
-            role: 'level.mode',
+            // @KI_HINWEIS: Official roles have no generic "level.mode"; writable string lists are "state",
+            // values the AVR only reports are "text" (https://www.iobroker.net/#en/documentation/dev/stateroles.md)
+            role: setting.write === false ? 'text' : 'state',
             type: 'string',
             read: true,
             write: setting.write !== false,
@@ -281,7 +283,7 @@ export const DEVICE_INFO_STATES: Record<string, ioBroker.SettableStateObject> = 
         type: 'state',
         common: {
             name: 'Brand',
-            role: 'info.manufacturer',
+            role: 'text',
             type: 'string',
             read: true,
             write: false,

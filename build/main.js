@@ -998,11 +998,11 @@ class Denon extends utils.Adapter {
         for (const obj of states.usCommandsZone) {
           const id = `zone${zoneNumber}.${obj._id}`;
           promises.push(
-            this.setObjectNotExistsAsync(id, {
-              type: obj.type,
-              common: obj.common,
-              native: obj.native
-            })
+            this.extendObjectAsync(
+              id,
+              { type: obj.type, common: obj.common, native: obj.native },
+              { preserve: { common: ["name"] } }
+            )
           );
         }
       }
@@ -1022,11 +1022,11 @@ class Denon extends utils.Adapter {
   async createMonitorState() {
     const promises = [];
     promises.push(
-      this.setObjectNotExistsAsync("settings.outputMonitor", {
+      this.extendObjectAsync("settings.outputMonitor", {
         type: "state",
         common: {
           name: "Output monitor",
-          role: "video.output",
+          role: "level",
           type: "number",
           write: true,
           read: true,
@@ -1046,7 +1046,7 @@ class Denon extends utils.Adapter {
           type: "state",
           common: {
             name: "Video processing mode",
-            role: "video.processingMode",
+            role: "state",
             type: "string",
             write: true,
             read: true,
@@ -1107,11 +1107,11 @@ class Denon extends utils.Adapter {
    * Creates the picture mode objects
    */
   async createPictureMode() {
-    await this.setObjectNotExistsAsync("settings.pictureMode", {
+    await this.extendObjectAsync("settings.pictureMode", {
       type: "state",
       common: {
         name: "Picture Mode Direct Change",
-        role: "media.pictureMode",
+        role: "state",
         type: "string",
         write: true,
         read: true,
@@ -1134,12 +1134,12 @@ class Denon extends utils.Adapter {
    * Creates the Speaker Preset Object
    */
   async createSpeakerPreset() {
-    await this.setObjectNotExistsAsync("settings.speakerPreset", {
+    await this.extendObjectAsync("settings.speakerPreset", {
       type: "state",
       common: {
         name: "Speaker Preset",
         type: "number",
-        role: "value",
+        role: "level",
         read: true,
         write: true,
         states: {

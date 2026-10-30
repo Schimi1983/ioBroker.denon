@@ -273,6 +273,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) buttons are acknowledged after the command was sent
 * (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps because half steps are ignored by the receiver
 * (Schimi1983) settings are read again when the main zone is switched on
+* (Schimi1983) all states use roles of the official ioBroker role list (e.g. `quickSelect` and `volumeDB` are `level`, settings with value lists are `state`), menu buttons are write-only
 * (Schimi1983) video resolution digits `9` = 2160p 24/25 Hz and `A` = 2160p 50/60 Hz, audio code `08` = DTS-HD High Resolution (measured live)
 * (Schimi1983) no timers are started while the adapter is stopping (warning "setTimeout called, but adapter is shutting down")
 * (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
