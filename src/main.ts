@@ -742,7 +742,14 @@ class Denon extends utils.Adapter {
             } catch {
                 presets = {};
             }
-            presets[String(parseInt(preset[1], 10))] = preset[2].replace(/\s\s+/g, ' ').trim();
+            const key = String(parseInt(preset[1], 10));
+            const name = preset[2].replace(/\s\s+/g, ' ').trim();
+            // @KI_HINWEIS: The AVR-X2200W answers all 36 slots, empty ones only blow up the JSON
+            if (name) {
+                presets[key] = name;
+            } else {
+                delete presets[key];
+            }
             await this.setStateChangedAsync('netAudio.presets', JSON.stringify(presets), true);
             return true;
         }

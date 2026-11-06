@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.8",
+    "version": "2.0.0-alpha.9",
     "news": {
+      "2.0.0-alpha.9": {
+        "en": "network presets list only stored favorites",
+        "de": "Netzwerk-Favoriten zeigen nur belegte Speicherplätze",
+        "ru": "сетевые пресеты показывают только сохранённые избранные",
+        "pt": "predefinições de rede listam apenas favoritos guardados",
+        "nl": "netwerkvoorkeuzes tonen alleen opgeslagen favorieten",
+        "fr": "les préréglages réseau ne listent que les favoris enregistrés",
+        "it": "le preselezioni di rete mostrano solo i preferiti salvati",
+        "es": "las presintonías de red solo muestran favoritos guardados",
+        "pl": "ustawienia sieciowe pokazują tylko zapisane ulubione",
+        "uk": "мережеві пресети показують лише збережені обрані",
+        "zh-cn": "网络预设仅列出已保存的收藏"
+      },
       "2.0.0-alpha.8": {
         "en": "new object tree: all states renamed and grouped by function (see README); input and quick select names from the AVR, only used inputs; new: Neural:X, Cinema EQ, loudness, subwoofer on/off, audio delay, all zone stereo, zone auto standby, HDMI audio, tuner band/preset, audio signal as text",
         "de": "neuer Objektbaum: alle Datenpunkte umbenannt und nach Funktion gruppiert (siehe README); Eingangs- und Quick-Select-Namen aus dem AVR, nur benutzte Eingänge; neu: Neural:X, Cinema EQ, Loudness, Subwoofer an/aus, Audio-Verzögerung, All Zone Stereo, Auto-Standby der Zonen, HDMI-Ton, Tuner-Band/Speicherplatz, Audiosignal als Klartext",
