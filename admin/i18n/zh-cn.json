@@ -1,15 +1,17 @@
 {
     "Connection": "连接",
-    "IP address or hostname of the AVR": "AVR 的 IP 地址或主机名",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "AVR 只接受一个 telnet 连接。请断开其他应用（例如 Home Assistant），并将 AVR 的网络控制（IP 控制）设置为“始终开启”。",
+    "Enter the address of your receiver. Everything else works without further settings.": "输入功放的地址。其他一切无需额外设置即可工作。",
+    "IP address of the receiver": "功放的 IP 地址",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "例如 192.168.1.50。会建议网络中找到的功放（仅在实例运行时）。",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "开始之前：在功放菜单中将 网络 → 网络控制 设置为“始终开启”。功放同一时间只接受一个控制连接，请关闭其他控制它的应用（例如 Home Assistant）。",
     "Advanced settings": "高级设置",
-    "Poll interval (ms)": "轮询间隔（毫秒）",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "AVR 不会主动推送的数值的轮询间隔（显示、睡眠定时器、快速选择）",
-    "Interval between commands (ms)": "命令间隔（毫秒）",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "两条命令之间的最小间隔。协议要求至少 50 毫秒",
-    "Telnet port": "Telnet 端口",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "所有 AVR 均为 23。仅在使用串口转 IP 网桥时修改",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "输入地址或选择在网络中找到的设备。搜索需要实例正在运行，并且只能找到同一子网中的 AVR。",
-    "Identify device via HTTP": "通过 HTTP 识别设备",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "启动时读取一次 Deviceinfo.xml（品牌、型号、区域数）。控制始终使用 telnet"
+    "Normally there is no need to change these settings.": "通常无需更改这些设置。",
+    "Update interval (ms)": "更新间隔（毫秒）",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "读取功放不会主动报告的数值（例如睡眠定时器）的频率。7000 = 每 7 秒",
+    "Pause between commands (ms)": "命令间隔（毫秒）",
+    "Only increase it if the receiver misses commands. Minimum 50": "仅当功放漏掉命令时才增大。最小 50",
+    "Port": "端口",
+    "Always 23. Only change it for a serial-to-network converter": "始终为 23。仅在使用串口转网络设备时更改",
+    "Detect brand, model and zones automatically": "自动识别品牌、型号和区域",
+    "Recommended. Reads this information from the receiver at startup": "推荐。启动时从功放读取这些信息"
 }

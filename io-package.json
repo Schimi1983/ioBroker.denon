@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.10",
+    "version": "2.0.0-alpha.11",
     "news": {
-      "2.0.0-alpha.10": {
+      "2.0.0-alpha.11": {
         "en": "new object tree (all states renamed, see README), input and quick select names from the receiver, many new settings, new telnet connection with reconnect, admin with jsonConfig",
         "de": "neuer Objektbaum (alle Datenpunkte umbenannt, siehe README), Eingangs- und Quick-Select-Namen aus dem Receiver, viele neue Einstellungen, neue Telnet-Verbindung mit Wiederverbindung, Admin mit jsonConfig",
         "ru": "новое дерево объектов (все состояния переименованы, см. README), имена входов и Quick Select из ресивера, много новых настроек, новое telnet-соединение с переподключением, admin на jsonConfig",

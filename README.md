@@ -13,9 +13,8 @@
 
 ## Denon/Marantz AVR adapter for ioBroker
 
-Control your Denon or Marantz AV receiver from ioBroker. The adapter connects to the receiver via the official
-telnet control protocol (port 23), receives all changes in real time and creates states for power, volume, inputs,
-surround modes, zones, tuner, display and many audio/video settings.
+Control your Denon or Marantz AV receiver from ioBroker: power, volume, input, surround mode, zone 2/3, tuner and many
+sound and video settings. Changes made on the receiver (e.g. with the remote) show up in ioBroker immediately.
 
 [🇩🇪 Deutsche Dokumentation](docs/de/README.md)
 
@@ -27,38 +26,58 @@ or any associated subsidiaries, logos or trademarks.
 
 ## Table of contents
 
-* [Requirements](#requirements)
-* [Installation](#installation)
+* [Quick start](#quick-start)
+* [Most important states](#most-important-states)
 * [Configuration](#configuration)
 * [Network setup of the AV receiver](#network-setup-of-the-av-receiver)
-* [Usage notes](#usage-notes)
+* [FAQ](#faq)
 * [Upgrading from 1.x](#upgrading-from-1x)
-* [States](#states)
+* [All states](#all-states)
 * [Multi zone amplifiers (DENON POA-3012CI)](#multi-zone-amplifiers-denon-poa-3012ci)
+* [Technical details](#technical-details)
 * [Missing functions & bugs](#missing-functions--bugs)
 * [Changelog](#changelog)
 * [License](#license)
 
-## Requirements
+## Quick start
 
-* Denon or Marantz AV receiver with network connection (LAN or WLAN) and network control enabled
-* Node.js >= 22
-* js-controller >= 6.0.11
-* Admin >= 7.6.20
+1. On the receiver, set "Network" → "Network Control" to **"Always On"** (details [below](#network-setup-of-the-av-receiver)).
+2. In ioBroker open the tab "Adapters", search for **denon** and click "+".
+3. Enter the IP address of the receiver in the instance settings (or pick it from the list of found devices) and save.
+4. After a few seconds `info.connection` turns green and the states of your receiver appear under `denon.0`.
 
-## Installation
+That's all. Which states are created depends on the model: the adapter only creates what your receiver supports.
 
-Install the adapter via the ioBroker admin interface: open the tab "Adapters", search for "denon" and click on the "+" symbol.
+Requirements: Denon or Marantz AV receiver in the network (LAN or WLAN), Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20.
+
+## Most important states
+
+For VIS, Blockly or scripts these are usually enough (`zone2` and `zone3` work the same as `main`):
+
+| State | Purpose | Example |
+|---|---|---|
+| `denon.0.system.power` | whole receiver on / standby | `true` = on, `false` = everything off |
+| `denon.0.main.power` | main zone only on/off | `true` |
+| `denon.0.main.volume` | volume (0 ... 98, as on the display) | `40` |
+| `denon.0.main.mute` | mute | `true` |
+| `denon.0.main.input` | select input | `TV` or the name from the receiver menu, e.g. `TV Audio` |
+| `denon.0.main.quickSelect` | recall quick select (Marantz: smart select) | `1` |
+| `denon.0.main.surroundMode` | surround mode | `STEREO` |
+| `denon.0.info.connection` | connected to the receiver | `true` |
+
+Buttons like `main.volumeUp` or `remote.up` are triggered with `true`.
 
 ## Configuration
 
-| Setting | Description |
+Usually only the IP address has to be entered.
+
+| Setting | Meaning |
 |---|---|
-| IP address or hostname of the AVR | IPv4 address, IPv6 address or hostname of the receiver. While the instance is running, receivers found in the network via UPnP/SSDP are offered as suggestions. The search only finds devices in the same subnet as ioBroker, otherwise enter the address manually. |
-| Poll interval (ms) | Interval for values the receiver does not report by itself (display, sleep timer, quick select, signal information). Default: 7000 ms |
-| Interval between commands (ms) | Minimum gap between two commands. The protocol requires at least 50 ms. Default: 100 ms |
-| Telnet port | 23 on all receivers. Only change it if a serial-to-IP bridge is used. |
-| Identify device via HTTP | Reads `Deviceinfo.xml` once at startup to detect brand (Denon/Marantz), model and number of zones. Queries for zones which do not exist are skipped. Control and all state updates always use telnet. Default: on |
+| IP address of the receiver | e.g. `192.168.1.50` (IPv6 and hostnames work too). While the instance is running, receivers found in the network are suggested. The search only finds devices in the same network as ioBroker, otherwise enter the address manually. |
+| Update interval (ms) | How often values the receiver does not report by itself are read (e.g. sleep timer). Default 7000 = every 7 seconds |
+| Pause between commands (ms) | Only increase it if the receiver misses commands. Default 100, minimum 50 |
+| Port | Always 23. Only change it for a serial-to-network converter |
+| Detect brand, model and zones automatically | Recommended. Reads brand, model and number of zones from the receiver at startup. Control always uses port 23 |
 
 ## Network setup of the AV receiver
 
@@ -69,24 +88,27 @@ Install the adapter via the ioBroker admin interface: open the tab "Adapters", s
 3. Select "Network" → "Network Control" (on some models "IP Control") and set it to **"Always On"**.
    With "Off In Standby" the receiver ignores network commands in standby and cannot be switched on by ioBroker.
 
-## Usage notes
+Tip: give the receiver a fixed IP address in your router, so the address does not change.
 
-* **Only one telnet connection:** the receiver accepts a single telnet connection. If another application is connected
-  (e.g. Home Assistant, the Denon/Marantz app, a script), the connection of the adapter is refused. A refused connection
-  is reported as warning if it lasts longer than 30 seconds, because a booting receiver also refuses connections for a few seconds.
-* **Reconnect:** the adapter reconnects automatically after a connection loss (1 s, 2 s, 4 s ... up to 60 s).
-  If the receiver does not send anything for 30 seconds, a keepalive query is sent; without an answer the connection is re-established.
-  Scripts which restart the instance on connection loss are not needed.
-* **Command pacing:** commands are queued and sent with the configured interval. Commands of the user are sent before
-  pending polls. After switching on the receiver or a zone, the next command is delayed by 1 second as required by the protocol.
-* **Features depending on the model:** many states are only created once the receiver answers the related query,
-  so a model without the feature gets no state. Surround modes and inputs reported by the receiver which are missing in the
-  value list are added automatically.
-* **Denon and Marantz:** quick select uses `QUICK` on Denon and `SMART` on Marantz receivers. The adapter detects the brand
-  and only sends the matching command.
-* **HEOS models:** receivers with HEOS (models from 2016) do not report the network display content, cover and favorites via
-  telnet. These states and the playback buttons are not created there.
-* **Standby:** to get answers in standby and to switch the receiver on, set "Network Control" to "Always On" (see above).
+## FAQ
+
+**`info.connection` does not turn green**
+* Is the IP address correct? It is shown in the receiver menu under "Network" → "Information" or in the device list of your router.
+* The receiver allows only **one** control connection. If another app controls it (Home Assistant, a second ioBroker, a script), the adapter gets no connection.
+* Is "Network Control" set to "Always On"?
+
+**The receiver cannot be switched on**
+* "Network Control" is probably set to "Off In Standby". Set it to "Always On".
+
+**A state is missing**
+* The adapter only creates states the receiver answers to. If one is missing, your model does not have this function (e.g. bass/treble in zone 2 on the AVR-X2200W).
+* Some values are only reported while the zone is switched on.
+
+**An input is missing in the list or has another name**
+* The list comes from the receiver: inputs hidden in the receiver menu are hidden here too, renamed inputs show the new name. Restart the instance after changing this in the receiver.
+
+**Display, cover or playback buttons are missing**
+* Models with HEOS (from about 2016) do not provide this information via the control connection.
 
 ## Upgrading from 1.x
 
@@ -134,7 +156,7 @@ Main changes (zone 2 and 3 the same with `zone2.` / `zone3.` instead of `main.`)
 
 List index values of 1.x (e.g. `selectInput` = `'5'` for TV) are not accepted anymore.
 
-## States
+## All states
 
 A state is only created once the receiver answers the related query, so every model only gets the states it supports.
 Buttons (role `button`) are created together with the value they belong to.
@@ -290,6 +312,14 @@ for each zone 2 ... 12 (even numbers):
 | `system.powerConfigurationChange` | string | R/W | Power configuration |
 | `system.masterTriggerInput` | boolean | R/W | Master trigger input |
 
+## Technical details
+
+* **Connection:** the adapter uses the official telnet control protocol on port 23. After a connection loss it reconnects by itself (1 s, 2 s, 4 s ... up to 60 s). If the receiver does not send anything for 30 seconds, a query is sent; without an answer it reconnects. A refused connection is only reported as warning after 30 seconds, because a booting receiver also refuses connections for a few seconds.
+* **Command pacing:** commands are queued and sent with the configured interval. Commands of the user are sent before pending queries. After switching on, the next command is delayed by 1 second as required by the protocol.
+* **Values:** read values of value lists are the codes of the receiver (e.g. `BRI`). Writing accepts the code or the shown name. Surround modes reported by the receiver which are missing in the list are added automatically.
+* **Denon and Marantz:** quick select uses `QUICK` on Denon and `SMART` on Marantz receivers. The adapter detects the brand and only sends the matching command.
+* **Settings changed in standby:** when the main zone is switched on, all settings are read again.
+
 ## Missing functions & bugs
 
 If you are missing any functions or detected a bug, please open an [issue](https://github.com/foxriver76/ioBroker.denon/issues).
@@ -315,6 +345,7 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 * (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps
 * (Schimi1983) settings are read again when the main zone is switched on; buttons are acknowledged after the command was sent
 * (Schimi1983) all states use roles of the official ioBroker role list
+* (Schimi1983) README with quick start, most important states and FAQ, configuration page in plain language
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)
 
 ### 1.15.12 (2024-07-23)

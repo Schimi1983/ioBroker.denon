@@ -2,9 +2,9 @@
 
 # ioBroker.denon – Denon/Marantz AV-Receiver
 
-Der Adapter bindet AV-Receiver von Denon und Marantz in ioBroker ein. Er verbindet sich über das offizielle
-Telnet-Steuerprotokoll (Port 23), empfängt alle Änderungen in Echtzeit und legt States für Power, Lautstärke, Eingänge,
-Surround-Modi, Zonen, Tuner, Display und viele Audio-/Video-Einstellungen an.
+Mit diesem Adapter steuerst du deinen Denon- oder Marantz-AV-Receiver aus ioBroker: ein- und ausschalten, Lautstärke,
+Eingang, Surround-Modus, Zone 2/3, Tuner und viele Klang- und Bildeinstellungen. Änderungen am Receiver (z. B. über die
+Fernbedienung) erscheinen sofort in ioBroker.
 
 ## Haftungsausschluss
 
@@ -14,36 +14,56 @@ Logos oder Marken und werden von diesen nicht unterstützt.
 
 ## Inhalt
 
-* [Voraussetzungen](#voraussetzungen)
-* [Installation](#installation)
+* [Schnellstart](#schnellstart)
+* [Die wichtigsten Datenpunkte](#die-wichtigsten-datenpunkte)
 * [Konfiguration](#konfiguration)
 * [Netzwerkeinstellungen am AV-Receiver](#netzwerkeinstellungen-am-av-receiver)
-* [Hinweise zum Betrieb](#hinweise-zum-betrieb)
+* [Häufige Fragen](#häufige-fragen)
 * [Update von 1.x](#update-von-1x)
-* [States](#states)
+* [Alle Datenpunkte](#alle-datenpunkte)
 * [Mehrzonen-Verstärker (DENON POA-3012CI)](#mehrzonen-verstärker-denon-poa-3012ci)
+* [Technische Details](#technische-details)
 * [Fehlende Funktionen & Fehler](#fehlende-funktionen--fehler)
 
-## Voraussetzungen
+## Schnellstart
 
-* Denon- oder Marantz-AV-Receiver mit Netzwerkverbindung (LAN oder WLAN) und aktivierter Netzwerksteuerung
-* Node.js >= 22
-* js-controller >= 6.0.11
-* Admin >= 7.6.20
+1. Am Receiver im Menü „Netzwerk“ → „Netzwerk-Strg.“ auf **„Immer ein“** stellen (Details [unten](#netzwerkeinstellungen-am-av-receiver)).
+2. In ioBroker im Reiter „Adapter“ nach **denon** suchen und auf „+“ klicken.
+3. In der Instanz die IP-Adresse des Receivers eintragen (oder aus der Liste der gefundenen Geräte wählen) und speichern.
+4. Nach wenigen Sekunden ist `info.connection` grün und unter `denon.0` erscheinen die Datenpunkte deines Receivers.
 
-## Installation
+Mehr ist nicht nötig. Welche Datenpunkte angelegt werden, hängt vom Modell ab: Der Adapter legt nur an, was dein Receiver auch kann.
 
-Der Adapter wird über die ioBroker-Admin-Oberfläche installiert: Reiter „Adapter“ öffnen, nach „denon“ suchen und auf „+“ klicken.
+Voraussetzungen: Denon- oder Marantz-AV-Receiver im Netzwerk (LAN oder WLAN), Node.js >= 22, js-controller >= 6.0.11, Admin >= 7.6.20.
+
+## Die wichtigsten Datenpunkte
+
+Für VIS, Blockly oder Skripte reichen meistens diese (statt `main` gibt es `zone2` und `zone3` genauso):
+
+| Datenpunkt | Wozu | Beispiel |
+|---|---|---|
+| `denon.0.system.power` | ganzen Receiver ein / Standby | `true` = an, `false` = alles aus |
+| `denon.0.main.power` | nur die Hauptzone ein/aus | `true` |
+| `denon.0.main.volume` | Lautstärke (0 ... 98, wie im Display) | `40` |
+| `denon.0.main.mute` | stumm | `true` |
+| `denon.0.main.input` | Eingang wählen | `TV` oder der Name aus dem Receiver-Menü, z. B. `TV Audio` |
+| `denon.0.main.quickSelect` | Quick Select (Marantz: Smart Select) abrufen | `1` |
+| `denon.0.main.surroundMode` | Surround-Modus | `STEREO` |
+| `denon.0.info.connection` | Verbindung zum Receiver steht | `true` |
+
+Tasten wie `main.volumeUp` oder `remote.up` werden mit `true` ausgelöst.
 
 ## Konfiguration
 
-| Einstellung | Beschreibung |
+Normalerweise muss nur die IP-Adresse eingetragen werden.
+
+| Einstellung | Bedeutung |
 |---|---|
-| IP-Adresse oder Hostname des AVR | IPv4-, IPv6-Adresse oder Hostname des Receivers. Solange die Instanz läuft, werden per UPnP/SSDP gefundene Receiver als Vorschlag angeboten. Die Suche findet nur Geräte im selben Subnetz wie ioBroker, sonst die Adresse manuell eingeben. |
-| Abfrageintervall (ms) | Intervall für Werte, die der Receiver nicht selbst meldet (Display, Sleep-Timer, Quick Select, Signal-Info). Standard: 7000 ms |
-| Abstand zwischen Befehlen (ms) | Minimaler Abstand zwischen zwei Befehlen. Das Protokoll verlangt mindestens 50 ms. Standard: 100 ms |
-| Telnet-Port | 23 bei allen Receivern. Nur ändern, wenn eine Seriell-zu-IP-Bridge genutzt wird. |
-| Gerät per HTTP erkennen | Liest beim Start einmal `Deviceinfo.xml` (Marke Denon/Marantz, Modell, Anzahl Zonen). Abfragen für nicht vorhandene Zonen entfallen. Gesteuert wird immer per Telnet. Standard: an |
+| IP-Adresse des Receivers | z. B. `192.168.1.50` (IPv6 und Hostname gehen auch). Solange die Instanz läuft, werden gefundene Receiver vorgeschlagen. Die Suche findet nur Geräte im selben Netz wie ioBroker, sonst die Adresse von Hand eintragen. |
+| Aktualisierungsintervall (ms) | Wie oft Werte gelesen werden, die der Receiver nicht selbst meldet (z. B. Sleep-Timer). Standard 7000 = alle 7 Sekunden |
+| Pause zwischen Befehlen (ms) | Nur erhöhen, wenn der Receiver Befehle verpasst. Standard 100, mindestens 50 |
+| Port | Immer 23. Nur für einen Seriell-Netzwerk-Wandler ändern |
+| Marke, Modell und Zonen automatisch erkennen | Empfohlen. Liest beim Start Marke, Modell und Anzahl der Zonen aus dem Receiver. Gesteuert wird trotzdem immer über Port 23 |
 
 ## Netzwerkeinstellungen am AV-Receiver
 
@@ -54,26 +74,27 @@ Der Adapter wird über die ioBroker-Admin-Oberfläche installiert: Reiter „Ada
 3. „Netzwerk“ → „Netzwerk-Strg.“ (bei manchen Modellen „IP-Steuerung“) auf **„Immer ein“** stellen.
    Mit „Aus im Standby“ ignoriert der Receiver im Standby alle Netzwerkbefehle und lässt sich von ioBroker nicht einschalten.
 
-## Hinweise zum Betrieb
+Tipp: Im Router dem Receiver eine feste IP-Adresse geben, damit sich die Adresse nicht ändert.
 
-* **Nur eine Telnet-Verbindung:** Der Receiver akzeptiert nur eine Telnet-Verbindung. Ist eine andere Anwendung verbunden
-  (z. B. Home Assistant, die Denon/Marantz-App, ein Skript), wird die Verbindung des Adapters abgelehnt. Eine Ablehnung wird
-  erst als Warnung gemeldet, wenn sie länger als 30 Sekunden anhält, weil auch ein hochfahrender Receiver einige Sekunden ablehnt.
-* **Wiederverbindung:** Nach einem Verbindungsverlust verbindet sich der Adapter selbst neu (1 s, 2 s, 4 s ... bis 60 s).
-  Sendet der Receiver 30 Sekunden lang nichts, wird eine Keepalive-Abfrage geschickt; ohne Antwort wird die Verbindung neu aufgebaut.
-  Skripte, die die Instanz bei Verbindungsverlust neu starten, werden nicht benötigt.
-* **Befehlstakt:** Befehle werden in eine Warteschlange gestellt und im eingestellten Abstand gesendet. Befehle des Nutzers
-  werden vor ausstehenden Abfragen gesendet. Nach dem Einschalten des Receivers oder einer Zone wird der nächste Befehl
-  wie im Protokoll gefordert um 1 Sekunde verzögert.
-* **Modellabhängige Funktionen:** Viele States werden erst angelegt, wenn der Receiver auf die zugehörige Abfrage antwortet.
-  Ein Modell ohne die Funktion bekommt also keinen State. Vom Receiver gemeldete Surround-Modi und Eingänge, die in der
-  Werteliste fehlen, werden automatisch ergänzt.
-* **Denon und Marantz:** Quick Select heißt bei Denon `QUICK`, bei Marantz `SMART`. Der Adapter erkennt die Marke und sendet
-  nur den passenden Befehl.
-* **HEOS-Modelle:** Receiver mit HEOS (Modelle ab 2016) melden Displayinhalt, Cover und Favoriten der Netzwerkquellen nicht
-  über Telnet. Diese Datenpunkte und die Wiedergabetasten entstehen dort nicht.
-* **Standby:** Damit der Receiver im Standby antwortet und eingeschaltet werden kann, muss „Netzwerk-Strg.“ auf „Immer ein“ stehen
-  (siehe oben).
+## Häufige Fragen
+
+**`info.connection` wird nicht grün**
+* Stimmt die IP-Adresse? Sie steht im Receiver-Menü unter „Netzwerk“ → „Information“ oder in der Geräteliste des Routers.
+* Der Receiver erlaubt nur **eine** Steuerverbindung. Läuft eine andere App, die ihn steuert (Home Assistant, ein zweiter ioBroker, ein Skript), bekommt der Adapter keine Verbindung.
+* Steht „Netzwerk-Strg.“ auf „Immer ein“?
+
+**Der Receiver lässt sich nicht einschalten**
+* „Netzwerk-Strg.“ steht wahrscheinlich auf „Aus im Standby“. Auf „Immer ein“ stellen.
+
+**Ein Datenpunkt fehlt**
+* Der Adapter legt nur Datenpunkte an, auf die der Receiver antwortet. Fehlt einer, kann dein Modell diese Funktion nicht (z. B. Bass/Höhen in Zone 2 beim AVR-X2200W).
+* Manche Werte meldet der Receiver erst, wenn die Zone eingeschaltet ist.
+
+**Ein Eingang fehlt in der Auswahl oder hat einen anderen Namen**
+* Die Liste kommt aus dem Receiver: Eingänge, die im Menü unter „Eingänge“ ausgeblendet sind, fehlen auch hier. Umbenannte Eingänge erscheinen mit dem neuen Namen. Nach einer Änderung im Receiver die Instanz einmal neu starten.
+
+**Display, Cover oder Wiedergabetasten fehlen**
+* Modelle mit HEOS (ab etwa 2016) geben diese Infos nicht über die Steuerverbindung heraus.
 
 ## Update von 1.x
 
@@ -121,7 +142,7 @@ Die wichtigsten Änderungen (Zone 2 und 3 genauso, nur mit `zone2.` bzw. `zone3.
 
 Die Listenindizes aus 1.x (z. B. `selectInput` = `'5'` für TV) werden nicht mehr angenommen.
 
-## States
+## Alle Datenpunkte
 
 Ein Datenpunkt entsteht erst, wenn der Receiver auf die zugehörige Abfrage antwortet. Jedes Modell bekommt also nur die
 Datenpunkte, die es kann. Tasten (Rolle `button`) entstehen zusammen mit dem Wert, zu dem sie gehören.
@@ -276,6 +297,14 @@ Mehrzonen-Verstärker wie der DENON POA-3012CI nutzen ein anderes Protokoll. Die
 | `zoneX.audioSignalInput` | boolean | R/W | Audiosignal-Eingang |
 | `system.powerConfigurationChange` | string | R/W | Power-Konfiguration |
 | `system.masterTriggerInput` | boolean | R/W | Master-Trigger-Eingang |
+
+## Technische Details
+
+* **Verbindung:** Der Adapter nutzt das offizielle Telnet-Steuerprotokoll auf Port 23. Nach einem Verbindungsverlust verbindet er sich selbst neu (1 s, 2 s, 4 s ... bis 60 s). Sendet der Receiver 30 Sekunden lang nichts, wird eine Abfrage geschickt; ohne Antwort wird neu verbunden. Eine abgelehnte Verbindung wird erst nach 30 Sekunden als Warnung gemeldet, weil auch ein hochfahrender Receiver einige Sekunden ablehnt.
+* **Befehlstakt:** Befehle werden in eine Warteschlange gestellt und im eingestellten Abstand gesendet. Befehle des Nutzers kommen vor ausstehenden Abfragen. Nach dem Einschalten wird der nächste Befehl wie im Protokoll gefordert um 1 Sekunde verzögert.
+* **Werte:** Gelesene Werte von Auswahllisten sind die Codes des Receivers (z. B. `BRI`). Geschrieben werden kann der Code oder der angezeigte Name. Vom Receiver gemeldete Surround-Modi, die in der Liste fehlen, werden automatisch ergänzt.
+* **Denon und Marantz:** Quick Select heißt bei Denon `QUICK`, bei Marantz `SMART`. Der Adapter erkennt die Marke und sendet nur den passenden Befehl.
+* **Einstellungen im Standby geändert:** Beim Einschalten der Hauptzone liest der Adapter alle Einstellungen neu.
 
 ## Fehlende Funktionen & Fehler
 

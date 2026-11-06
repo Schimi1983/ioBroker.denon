@@ -1,15 +1,17 @@
 {
     "Connection": "Połączenie",
-    "IP address or hostname of the AVR": "Adres IP lub nazwa hosta AVR",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "AVR akceptuje tylko JEDNO połączenie telnet. Odłącz inne aplikacje (np. Home Assistant) i ustaw w AVR sterowanie sieciowe (sterowanie IP) na \"Zawsze włączone\".",
+    "Enter the address of your receiver. Everything else works without further settings.": "Wpisz adres swojego amplitunera. Wszystko inne działa bez dodatkowych ustawień.",
+    "IP address of the receiver": "Adres IP amplitunera",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "np. 192.168.1.50. Amplitunery znalezione w sieci są podpowiadane (tylko gdy instancja działa).",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "Przed rozpoczęciem: w menu amplitunera ustaw Sieć → Sterowanie sieciowe na „Zawsze wł.”. Amplituner akceptuje tylko jedno połączenie sterujące naraz, zamknij więc inne aplikacje, które nim sterują (np. Home Assistant).",
     "Advanced settings": "Ustawienia zaawansowane",
-    "Poll interval (ms)": "Interwał odpytywania (ms)",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Interwał dla wartości, których AVR nie wysyła sam (wyświetlacz, timer, szybki wybór)",
-    "Interval between commands (ms)": "Odstęp między poleceniami (ms)",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "Minimalny odstęp między dwoma poleceniami. Protokół wymaga co najmniej 50 ms",
-    "Telnet port": "Port telnet",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 we wszystkich AVR. Zmień tylko przy użyciu mostka szeregowy-IP",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Wpisz adres lub wybierz urządzenie znalezione w sieci. Wyszukiwanie wymaga uruchomionej instancji i znajduje tylko AVR w tej samej podsieci.",
-    "Identify device via HTTP": "Rozpoznaj urządzenie przez HTTP",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Odczytuje Deviceinfo.xml raz przy starcie (marka, model, liczba stref). Sterowanie zawsze przez telnet"
+    "Normally there is no need to change these settings.": "Zazwyczaj nie trzeba zmieniać tych ustawień.",
+    "Update interval (ms)": "Interwał aktualizacji (ms)",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "Jak często odczytywane są wartości, których amplituner sam nie zgłasza, np. wyłącznik czasowy. 7000 = co 7 sekund",
+    "Pause between commands (ms)": "Przerwa między poleceniami (ms)",
+    "Only increase it if the receiver misses commands. Minimum 50": "Zwiększ tylko, jeśli amplituner gubi polecenia. Minimum 50",
+    "Port": "Port",
+    "Always 23. Only change it for a serial-to-network converter": "Zawsze 23. Zmień tylko dla konwertera szeregowo-sieciowego",
+    "Detect brand, model and zones automatically": "Rozpoznawaj markę, model i strefy automatycznie",
+    "Recommended. Reads this information from the receiver at startup": "Zalecane. Odczytuje te informacje z amplitunera przy starcie"
 }

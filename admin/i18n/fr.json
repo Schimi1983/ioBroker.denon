@@ -1,15 +1,17 @@
 {
     "Connection": "Connexion",
-    "IP address or hostname of the AVR": "Adresse IP ou nom d'hôte de l'AVR",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "L'AVR n'accepte qu'UNE seule connexion telnet. Déconnectez les autres applications (p. ex. Home Assistant) et réglez le contrôle réseau (contrôle IP) de l'AVR sur « Toujours actif ».",
+    "Enter the address of your receiver. Everything else works without further settings.": "Saisissez l’adresse de votre ampli. Tout le reste fonctionne sans autre réglage.",
+    "IP address of the receiver": "Adresse IP de l’ampli",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "p. ex. 192.168.1.50. Les amplis trouvés sur le réseau sont proposés (uniquement si l’instance est en marche).",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "Avant de commencer : dans le menu de l’ampli, réglez Réseau → Contrôle réseau sur « Toujours activé ». L’ampli n’accepte qu’une seule connexion de contrôle à la fois, fermez donc les autres applications qui le pilotent (p. ex. Home Assistant).",
     "Advanced settings": "Paramètres avancés",
-    "Poll interval (ms)": "Intervalle d'interrogation (ms)",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Intervalle pour les valeurs que l'AVR n'envoie pas lui-même (affichage, minuterie, sélection rapide)",
-    "Interval between commands (ms)": "Intervalle entre les commandes (ms)",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "Écart minimal entre deux commandes. Le protocole exige au moins 50 ms",
-    "Telnet port": "Port telnet",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 sur tous les AVR. À modifier uniquement avec une passerelle série-IP",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Saisissez l'adresse ou choisissez un appareil trouvé sur le réseau. La recherche nécessite l'instance démarrée et ne trouve que les AVR du même sous-réseau.",
-    "Identify device via HTTP": "Identifier l'appareil via HTTP",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Lit Deviceinfo.xml une fois au démarrage (marque, modèle, nombre de zones). Le contrôle utilise toujours telnet"
+    "Normally there is no need to change these settings.": "Normalement, il n’est pas nécessaire de modifier ces paramètres.",
+    "Update interval (ms)": "Intervalle de mise à jour (ms)",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "Fréquence de lecture des valeurs que l’ampli ne signale pas lui-même, p. ex. la minuterie. 7000 = toutes les 7 secondes",
+    "Pause between commands (ms)": "Pause entre les commandes (ms)",
+    "Only increase it if the receiver misses commands. Minimum 50": "À augmenter uniquement si l’ampli manque des commandes. Minimum 50",
+    "Port": "Port",
+    "Always 23. Only change it for a serial-to-network converter": "Toujours 23. À modifier uniquement pour un convertisseur série-réseau",
+    "Detect brand, model and zones automatically": "Détecter automatiquement la marque, le modèle et les zones",
+    "Recommended. Reads this information from the receiver at startup": "Recommandé. Lit ces informations depuis l’ampli au démarrage"
 }

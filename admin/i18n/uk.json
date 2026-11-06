@@ -1,15 +1,17 @@
 {
     "Connection": "Підключення",
-    "IP address or hostname of the AVR": "IP-адреса або ім'я хоста AVR",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "AVR приймає лише ОДНЕ telnet-підключення. Від'єднайте інші застосунки (наприклад, Home Assistant) і встановіть в AVR мережеве керування (IP-керування) на «Завжди увімкнено».",
+    "Enter the address of your receiver. Everything else works without further settings.": "Введіть адресу ресивера. Усе інше працює без додаткових налаштувань.",
+    "IP address of the receiver": "IP-адреса ресивера",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "напр. 192.168.1.50. Знайдені в мережі ресивери пропонуються автоматично (лише коли екземпляр працює).",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "Перед початком: у меню ресивера встановіть Мережа → Мережеве керування на «Завжди увімк.». Ресивер приймає лише одне керуюче з’єднання, тож закрийте інші застосунки, що ним керують (напр. Home Assistant).",
     "Advanced settings": "Розширені налаштування",
-    "Poll interval (ms)": "Інтервал опитування (мс)",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Інтервал для значень, які AVR не передає сам (дисплей, таймер сну, швидкий вибір)",
-    "Interval between commands (ms)": "Інтервал між командами (мс)",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "Мінімальний інтервал між двома командами. Протокол вимагає щонайменше 50 мс",
-    "Telnet port": "Порт telnet",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 у всіх AVR. Змінюйте лише при використанні мосту послідовний порт-IP",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Введіть адресу або виберіть пристрій, знайдений у мережі. Для пошуку потрібен запущений екземпляр, знаходяться лише AVR у тій самій підмережі.",
-    "Identify device via HTTP": "Визначати пристрій через HTTP",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Одноразово читає Deviceinfo.xml під час запуску (марка, модель, кількість зон). Керування завжди через telnet"
+    "Normally there is no need to change these settings.": "Зазвичай ці налаштування змінювати не потрібно.",
+    "Update interval (ms)": "Інтервал оновлення (мс)",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "Як часто зчитуються значення, які ресивер не повідомляє сам, напр. таймер сну. 7000 = кожні 7 секунд",
+    "Pause between commands (ms)": "Пауза між командами (мс)",
+    "Only increase it if the receiver misses commands. Minimum 50": "Збільшуйте лише якщо ресивер пропускає команди. Мінімум 50",
+    "Port": "Порт",
+    "Always 23. Only change it for a serial-to-network converter": "Завжди 23. Змінюйте лише для перетворювача послідовного порту в мережу",
+    "Detect brand, model and zones automatically": "Визначати марку, модель і зони автоматично",
+    "Recommended. Reads this information from the receiver at startup": "Рекомендовано. Зчитує ці дані з ресивера під час запуску"
 }

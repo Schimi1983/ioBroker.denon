@@ -1,15 +1,17 @@
 {
     "Connection": "Verbinding",
-    "IP address or hostname of the AVR": "IP-adres of hostnaam van de AVR",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "De AVR accepteert slechts ÉÉN telnetverbinding. Verbreek andere apps (bijv. Home Assistant) en zet netwerkbediening (IP-bediening) op de AVR op \"Altijd aan\".",
+    "Enter the address of your receiver. Everything else works without further settings.": "Voer het adres van je receiver in. Al het andere werkt zonder verdere instellingen.",
+    "IP address of the receiver": "IP-adres van de receiver",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "bijv. 192.168.1.50. In het netwerk gevonden receivers worden voorgesteld (alleen als de instantie draait).",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "Vooraf: zet in het menu van de receiver Netwerk → Netwerkbesturing op “Altijd aan”. De receiver accepteert maar één besturingsverbinding tegelijk, sluit dus andere apps die hem besturen (bijv. Home Assistant).",
     "Advanced settings": "Geavanceerde instellingen",
-    "Poll interval (ms)": "Poll-interval (ms)",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Interval voor waarden die de AVR niet zelf doorgeeft (display, slaaptimer, snelkeuze)",
-    "Interval between commands (ms)": "Interval tussen opdrachten (ms)",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "Minimale tijd tussen twee opdrachten. Het protocol vereist minstens 50 ms",
-    "Telnet port": "Telnetpoort",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 bij alle AVR's. Alleen wijzigen bij gebruik van een serieel-naar-IP-bridge",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Voer het adres in of kies een in het netwerk gevonden apparaat. Zoeken vereist een draaiende instantie en vindt alleen AVR's in hetzelfde subnet.",
-    "Identify device via HTTP": "Apparaat via HTTP herkennen",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Leest bij het starten eenmaal Deviceinfo.xml (merk, model, aantal zones). Bediening gaat altijd via telnet"
+    "Normally there is no need to change these settings.": "Deze instellingen hoeven normaal niet te worden gewijzigd.",
+    "Update interval (ms)": "Update-interval (ms)",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "Hoe vaak waarden worden gelezen die de receiver niet zelf meldt, bijv. de slaaptimer. 7000 = elke 7 seconden",
+    "Pause between commands (ms)": "Pauze tussen opdrachten (ms)",
+    "Only increase it if the receiver misses commands. Minimum 50": "Alleen verhogen als de receiver opdrachten mist. Minimaal 50",
+    "Port": "Poort",
+    "Always 23. Only change it for a serial-to-network converter": "Altijd 23. Alleen wijzigen voor een serieel-naar-netwerkomvormer",
+    "Detect brand, model and zones automatically": "Merk, model en zones automatisch herkennen",
+    "Recommended. Reads this information from the receiver at startup": "Aanbevolen. Leest deze gegevens bij het starten uit de receiver"
 }

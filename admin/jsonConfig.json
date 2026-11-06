@@ -8,11 +8,21 @@
             "size": 3,
             "newLine": true
         },
+        "introText": {
+            "type": "staticText",
+            "text": "Enter the address of your receiver. Everything else works without further settings.",
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
+        },
         "ip": {
             "type": "autocompleteSendTo",
             "command": "browse",
-            "label": "IP address or hostname of the AVR",
-            "help": "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.",
+            "label": "IP address of the receiver",
+            "help": "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).",
             "newLine": true,
             "xs": 12,
             "sm": 12,
@@ -25,7 +35,7 @@
         },
         "infoSingleConnection": {
             "type": "staticText",
-            "text": "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.",
+            "text": "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).",
             "newLine": true,
             "xs": 12,
             "sm": 12,
@@ -39,10 +49,20 @@
             "size": 3,
             "newLine": true
         },
+        "advancedText": {
+            "type": "staticText",
+            "text": "Normally there is no need to change these settings.",
+            "newLine": true,
+            "xs": 12,
+            "sm": 12,
+            "md": 12,
+            "lg": 12,
+            "xl": 12
+        },
         "pollInterval": {
             "type": "number",
-            "label": "Poll interval (ms)",
-            "help": "Interval for states the AVR does not push itself (display, sleep timer, quick select)",
+            "label": "Update interval (ms)",
+            "help": "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds",
             "min": 1000,
             "max": 600000,
             "step": 1000,
@@ -55,8 +75,8 @@
         },
         "requestInterval": {
             "type": "number",
-            "label": "Interval between commands (ms)",
-            "help": "Minimum gap between two commands. The protocol requires at least 50 ms",
+            "label": "Pause between commands (ms)",
+            "help": "Only increase it if the receiver misses commands. Minimum 50",
             "min": 50,
             "max": 2000,
             "step": 10,
@@ -68,8 +88,8 @@
         },
         "telnetPort": {
             "type": "port",
-            "label": "Telnet port",
-            "help": "23 on all AVRs. Only change it if a serial-to-IP bridge is used",
+            "label": "Port",
+            "help": "Always 23. Only change it for a serial-to-network converter",
             "min": 1,
             "max": 65535,
             "xs": 12,
@@ -80,8 +100,8 @@
         },
         "useHttpInfo": {
             "type": "checkbox",
-            "label": "Identify device via HTTP",
-            "help": "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet",
+            "label": "Detect brand, model and zones automatically",
+            "help": "Recommended. Reads this information from the receiver at startup",
             "newLine": true,
             "xs": 12,
             "sm": 12,

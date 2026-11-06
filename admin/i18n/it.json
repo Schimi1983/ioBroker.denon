@@ -1,15 +1,17 @@
 {
     "Connection": "Connessione",
-    "IP address or hostname of the AVR": "Indirizzo IP o nome host dell'AVR",
-    "The AVR only accepts ONE telnet connection. Disconnect other apps (e.g. Home Assistant) and set Network Control (IP Control) to Always On on the AVR.": "L'AVR accetta UNA sola connessione telnet. Disconnettere le altre app (ad es. Home Assistant) e impostare il controllo di rete (controllo IP) dell'AVR su \"Sempre attivo\".",
+    "Enter the address of your receiver. Everything else works without further settings.": "Inserisci l’indirizzo del tuo ricevitore. Tutto il resto funziona senza ulteriori impostazioni.",
+    "IP address of the receiver": "Indirizzo IP del ricevitore",
+    "e.g. 192.168.1.50. Receivers found in your network are suggested (only while the instance is running).": "es. 192.168.1.50. I ricevitori trovati in rete vengono proposti (solo con l’istanza in esecuzione).",
+    "Before you start: in the receiver menu set Network → Network Control to “Always On”. The receiver accepts only one control connection at a time, so close other apps that control it (e.g. Home Assistant).": "Prima di iniziare: nel menu del ricevitore imposta Rete → Controllo di rete su “Sempre attivo”. Il ricevitore accetta una sola connessione di controllo alla volta, quindi chiudi le altre app che lo controllano (ad es. Home Assistant).",
     "Advanced settings": "Impostazioni avanzate",
-    "Poll interval (ms)": "Intervallo di polling (ms)",
-    "Interval for states the AVR does not push itself (display, sleep timer, quick select)": "Intervallo per i valori che l'AVR non invia autonomamente (display, timer, selezione rapida)",
-    "Interval between commands (ms)": "Intervallo tra i comandi (ms)",
-    "Minimum gap between two commands. The protocol requires at least 50 ms": "Distanza minima tra due comandi. Il protocollo richiede almeno 50 ms",
-    "Telnet port": "Porta telnet",
-    "23 on all AVRs. Only change it if a serial-to-IP bridge is used": "23 su tutti gli AVR. Modificare solo se si usa un bridge seriale-IP",
-    "Enter the address or pick a device found in the network. The search needs the running instance and only finds AVRs in the same subnet.": "Inserire l'indirizzo o scegliere un dispositivo trovato in rete. La ricerca richiede l'istanza in esecuzione e trova solo AVR nella stessa sottorete.",
-    "Identify device via HTTP": "Identificare il dispositivo via HTTP",
-    "Reads Deviceinfo.xml once at startup (brand, model, number of zones). Control always uses telnet": "Legge Deviceinfo.xml una volta all'avvio (marca, modello, numero di zone). Il controllo usa sempre telnet"
+    "Normally there is no need to change these settings.": "Normalmente non è necessario modificare queste impostazioni.",
+    "Update interval (ms)": "Intervallo di aggiornamento (ms)",
+    "How often values the receiver does not report by itself are read, e.g. the sleep timer. 7000 = every 7 seconds": "Ogni quanto vengono letti i valori che il ricevitore non comunica da solo, ad es. il timer di spegnimento. 7000 = ogni 7 secondi",
+    "Pause between commands (ms)": "Pausa tra i comandi (ms)",
+    "Only increase it if the receiver misses commands. Minimum 50": "Aumentare solo se il ricevitore perde dei comandi. Minimo 50",
+    "Port": "Porta",
+    "Always 23. Only change it for a serial-to-network converter": "Sempre 23. Modificare solo per un convertitore seriale-rete",
+    "Detect brand, model and zones automatically": "Riconoscere automaticamente marca, modello e zone",
+    "Recommended. Reads this information from the receiver at startup": "Consigliato. Legge queste informazioni dal ricevitore all’avvio"
 }
