@@ -41,6 +41,20 @@ const RESPONSES = {
     'VSASP ?': ['VSASPFUL'],
     'SSSMG ?': ['SSSMG MUS'],
     'SSINFFRM ?': ['SSINFFRMAVR 4700-0591-4030', 'SSINFFRMDTS 3.90.50.00'],
+    'SSFUN ?': ['SSFUNTV TV Audio', 'SSFUNBD Blu-ray', 'SSFUNSAT/CBL CBL/SAT', 'SSFUNMPLAY Shield', 'SSFUNEND'],
+    'SSSOD ?': ['SSSODTV USE', 'SSSODBD USE', 'SSSODSAT/CBL USE', 'SSSODMPLAY USE', 'SSSODSIRIUSXM DEL', 'SSSODEND'],
+    'SSQSNZMA ?': ['SSQSNZMAQS1 Movie', 'SSQSNZMAQS2 Music', 'SSQSNZMAEND'],
+    'PSNEURAL ?': ['PSNEURAL ON'],
+    'PSCINEMA EQ. ?': ['PSCINEMA EQ.OFF'],
+    'PSLOM ?': ['PSLOM ON'],
+    'PSSWR ?': ['PSSWR ON'],
+    'PSDELAY ?': ['PSDELAY 000'],
+    'MNZST?': ['MNZST OFF'],
+    'Z2STBY?': ['Z2STBY2H'],
+    'Z2HDA?': ['Z2HDA THR'],
+    'VSAUDIO ?': ['VSAUDIO AMP'],
+    'TMAN?': ['TMANFM'],
+    'TPAN?': ['TPAN01'],
     NSE: [
         `NSE0Online Music${' '.repeat(84)}`,
         `NSE1\nFavorites${' '.repeat(86)}`,
@@ -132,41 +146,46 @@ tests.integration(path.join(__dirname, '..'), {
 
             it('connects and detects the receiver', async () => {
                 expect(await val('info.connection')).to.equal(true);
-                expect(await val('info.friendlyName')).to.equal('Denon AVR-X2200W');
+                expect(await val('info.name')).to.equal('Denon AVR-X2200W');
             }).timeout(10_000);
 
             it('parses half dB master volume', async () => {
-                expect(await val('zoneMain.volume')).to.equal(45.5);
-                expect(await val('zoneMain.volumeDB')).to.equal(-34.5);
+                expect(await val('main.volume')).to.equal(45.5);
+                expect(await val('main.volumeDb')).to.equal(-34.5);
+                expect(await val('main.maxVolume')).to.equal(98);
             }).timeout(10_000);
 
             it('accepts surround modes missing in the default list and adds them', async () => {
-                expect(await val('settings.surroundMode')).to.equal('DOLBY HD+DS');
-                const obj = await harness.objects.getObjectAsync('denon.0.settings.surroundMode');
+                expect(await val('main.surroundMode')).to.equal('DOLBY HD+DS');
+                const obj = await harness.objects.getObjectAsync('denon.0.main.surroundMode');
                 expect(obj.common.states).to.have.property('DOLBY HD+DS', 'DOLBY HD+DS');
             }).timeout(10_000);
 
             it('stores protocol codes for brightness and video processing mode', async () => {
                 expect(await val('display.brightness')).to.equal('OFF');
-                expect(await val('settings.videoProcessingMode')).to.equal('AUTO');
+                expect(await val('main.video.processingMode')).to.equal('AUTO');
             }).timeout(10_000);
 
-            it('maps channel volumes incl. SW2 and ignores CVEND', async () => {
-                expect(await val('zoneMain.channelVolumeFrontLeft')).to.equal(0);
-                expect(await val('zoneMain.channelVolumeSubwooferTwo')).to.equal(-4.5);
-                expect(await val('zoneMain.channelVolumeSubwoofer')).to.equal(0);
+            it('creates channel levels only for existing speakers', async () => {
+                expect(await val('main.channelVolume.frontLeft')).to.equal(0);
+                expect(await val('main.channelVolume.subwooferTwo')).to.equal(-4.5);
+                const missing = await harness.objects.getObjectAsync('denon.0.main.channelVolume.topFrontLeft');
+                expect(missing).to.not.be.ok;
             }).timeout(10_000);
 
-            it('writes clean display lines incl. the cursor line', async () => {
-                expect(await val('display.displayContent0')).to.equal('Online Music');
-                expect(await val('display.displayContent1')).to.equal('Favorites');
-                expect(await val('display.displayContent2')).to.equal('Internet Radio');
-                expect(await val('display.displayContent4')).to.equal('');
+            it('writes clean display lines incl. the cursor line and creates the play buttons', async () => {
+                expect(await val('display.line0')).to.equal('Online Music');
+                expect(await val('display.line1')).to.equal('Favorites');
+                expect(await val('display.line2')).to.equal('Internet Radio');
+                expect(await val('display.line4')).to.equal('');
+                expect(await val('display.cursorLine')).to.equal(1);
+                const play = await harness.objects.getObjectAsync('denon.0.remote.play');
+                expect(play.common.role).to.equal('button.play');
             }).timeout(10_000);
 
             it('creates only existing zones and polls the detected quick select flavor', async () => {
-                const z2 = await harness.objects.getObjectAsync('denon.0.zone2.powerZone');
-                const z3 = await harness.objects.getObjectAsync('denon.0.zone3.powerZone');
+                const z2 = await harness.objects.getObjectAsync('denon.0.zone2.power');
+                const z3 = await harness.objects.getObjectAsync('denon.0.zone3.power');
                 expect(z2).to.be.ok;
                 expect(z3).to.not.be.ok;
                 // after detection polls must not ask for zone 3 or for Marantz SMART select anymore
@@ -178,70 +197,99 @@ tests.integration(path.join(__dirname, '..'), {
                 expect(polled).to.not.include('Z3SLP?');
             }).timeout(15_000);
 
-            it('creates settings with fixed value lists only after the AVR answered', async () => {
-                expect(await val('settings.autoStandby')).to.equal('30M');
-                expect(await val('settings.ecoMode')).to.equal('AUTO');
-                expect(await val('settings.dynamicCompression')).to.equal('OFF');
-                expect(await val('settings.audioRestorer')).to.equal('OFF');
-                expect(await val('settings.inputMode')).to.equal('NO');
-                expect(await val('settings.digitalInputMode')).to.equal('AUTO');
+            it('uses input and quick select names of the AVR and lists only used inputs', async () => {
+                const obj = await harness.objects.getObjectAsync('denon.0.main.input');
+                expect(obj.common.states).to.deep.equal({
+                    TV: 'TV Audio',
+                    BD: 'Blu-ray',
+                    'SAT/CBL': 'CBL/SAT',
+                    MPLAY: 'Shield',
+                });
+                const z2 = await harness.objects.getObjectAsync('denon.0.zone2.input');
+                expect(z2.common.states).to.have.property('SOURCE');
+                expect(z2.common.states).to.have.property('MPLAY', 'Shield');
+                const quick = await harness.objects.getObjectAsync('denon.0.main.quickSelect');
+                expect(quick.common.states).to.deep.equal({ 1: 'Movie', 2: 'Music' });
+            }).timeout(10_000);
+
+            it('creates settings only after the AVR answered', async () => {
+                expect(await val('main.autoStandby')).to.equal('30M');
+                expect(await val('system.ecoMode')).to.equal('AUTO');
+                expect(await val('main.audio.dynamicCompression')).to.equal('OFF');
+                expect(await val('main.audio.audioRestorer')).to.equal('OFF');
+                expect(await val('main.audio.inputMode')).to.equal('NO');
+                expect(await val('main.audio.digitalInputMode')).to.equal('AUTO');
+                expect(await val('main.audio.neuralX')).to.equal(true);
+                expect(await val('main.audio.cinemaEq')).to.equal(false);
+                expect(await val('main.audio.loudness')).to.equal(true);
+                expect(await val('main.audio.subwoofer')).to.equal(true);
+                expect(await val('main.audio.audioDelay')).to.equal(0);
+                expect(await val('system.allZoneStereo')).to.equal(false);
+                expect(await val('zone2.autoStandby')).to.equal('2H');
+                expect(await val('zone2.hdmiAudio')).to.equal('THR');
+                expect(await val('main.video.hdmiAudioOutput')).to.equal('AMP');
+                expect(await val('tuner.band')).to.equal('FM');
+                expect(await val('tuner.preset')).to.equal(1);
+                const geq = await harness.objects.getObjectAsync('denon.0.main.audio.graphicEq');
+                expect(geq, 'no answer, no state').to.not.be.ok;
             }).timeout(10_000);
 
             it('reads firmware, video settings and the sound mode group', async () => {
                 expect(await val('info.firmware')).to.equal('4700-0591-4030');
                 expect(await val('info.firmwareDts')).to.equal('3.90.50.00');
-                expect(await val('settings.hdmiResolution')).to.equal('4K');
-                expect(await val('settings.analogResolution')).to.equal('AUTO');
-                expect(await val('settings.aspectRatio')).to.equal('FUL');
-                expect(await val('settings.soundModeGroup')).to.equal('MUS');
+                expect(await val('main.video.hdmiResolution')).to.equal('4K');
+                expect(await val('main.video.analogResolution')).to.equal('AUTO');
+                expect(await val('main.video.aspectRatio')).to.equal('FUL');
+                expect(await val('info.soundModeGroup')).to.equal('MUS');
             }).timeout(10_000);
 
-            it('stores signal information and the display cursor line', async () => {
+            it('stores signal information as code and plain text', async () => {
                 expect(await val('info.audioSignalCode')).to.equal('02');
+                expect(await val('info.audioSignal')).to.equal('PCM');
                 expect(await val('info.audioSampleRate')).to.equal('48K');
                 expect(await val('info.videoResolutionCode')).to.equal('009');
                 expect(await val('info.videoInputResolution')).to.equal('no signal');
                 expect(await val('info.videoOutputResolution')).to.equal('2160p 24/25Hz');
-                expect(await val('display.cursorLine')).to.equal(1);
             }).timeout(10_000);
 
             it('sends settings and sound mode group buttons', async () => {
                 const before = avr.received.length;
-                await harness.states.setStateAsync('denon.0.settings.ecoMode', 'Off');
-                await harness.states.setStateAsync('denon.0.settings.autoStandby', '60M');
-                await harness.states.setStateAsync('denon.0.settings.dynamicCompression', 'AUTO');
-                await harness.states.setStateAsync('denon.0.settings.hdmiResolution', '1080p 24 Hz');
-                await harness.states.setStateAsync('denon.0.settings.soundModeMovie', true);
+                await harness.states.setStateAsync('denon.0.system.ecoMode', 'Off');
+                await harness.states.setStateAsync('denon.0.main.autoStandby', '60M');
+                await harness.states.setStateAsync('denon.0.main.audio.dynamicCompression', 'AUTO');
+                await harness.states.setStateAsync('denon.0.main.video.hdmiResolution', '1080p 24 Hz');
+                await harness.states.setStateAsync('denon.0.main.audio.neuralX', false);
+                await harness.states.setStateAsync('denon.0.main.soundModeMovie', true);
                 await wait(1_500);
                 const sent = avr.received.slice(before);
                 expect(sent).to.include('ECOOFF');
                 expect(sent).to.include('STBY60M');
                 expect(sent).to.include('PSDRC AUTO');
                 expect(sent).to.include('VSSCH10P24');
+                expect(sent).to.include('PSNEURAL OFF');
                 expect(sent).to.include('MSMOVIE');
-                expect(await val('settings.soundModeGroup')).to.equal('MOV');
-                expect(await val('settings.surroundMode')).to.equal('DOLBY SURROUND');
-                const button = await harness.states.getStateAsync('denon.0.settings.soundModeMovie');
+                expect(await val('info.soundModeGroup')).to.equal('MOV');
+                expect(await val('main.surroundMode')).to.equal('DOLBY SURROUND');
+                const button = await harness.states.getStateAsync('denon.0.main.soundModeMovie');
                 expect(button.ack, 'button is acknowledged').to.equal(true);
             }).timeout(10_000);
 
-            it('accepts index values written by scripts for version 1.x', async () => {
+            it('selects inputs by code or by name of the AVR', async () => {
                 const before = avr.received.length;
-                await harness.states.setStateAsync('denon.0.zoneMain.selectInput', '5');
-                await harness.states.setStateAsync('denon.0.settings.surroundMode', '3');
-                await harness.states.setStateAsync('denon.0.display.brightness', '3');
-                await harness.states.setStateAsync('denon.0.settings.videoProcessingMode', '2');
+                await harness.states.setStateAsync('denon.0.main.input', 'Shield');
+                await harness.states.setStateAsync('denon.0.main.input', 'BD');
+                await harness.states.setStateAsync('denon.0.main.quickSelect', 2);
                 await wait(1_500);
                 const sent = avr.received.slice(before);
-                expect(sent).to.include('SITV');
-                expect(sent).to.include('MSMCH STEREO');
-                expect(sent).to.include('DIM BRI');
-                expect(sent).to.include('VSVPMMOVI');
+                expect(sent).to.include('SIMPLAY');
+                expect(sent).to.include('SIBD');
+                expect(sent).to.include('MSQUICK2');
             }).timeout(10_000);
 
             it('handles zone 2 input SOURCE and whole step zone volumes (live AVR-X2200W)', async () => {
-                expect(await val('zone2.selectInput')).to.equal('SOURCE');
+                expect(await val('zone2.input')).to.equal('SOURCE');
                 expect(await val('zone2.volume')).to.equal(40);
+                expect(await val('zone2.volumeDb')).to.equal(-40);
                 const before = avr.received.length;
                 await harness.states.setStateAsync('denon.0.zone2.volume', 35.5);
                 await wait(1_500);
@@ -253,26 +301,28 @@ tests.integration(path.join(__dirname, '..'), {
 
             it('reads the settings again when the main zone is switched on', async () => {
                 const before = avr.received.length;
-                await harness.states.setStateAsync('denon.0.zoneMain.powerZone', true);
-                await wait(3_000);
+                await harness.states.setStateAsync('denon.0.main.power', true);
+                await wait(5_000);
                 const sent = avr.received.slice(before);
                 expect(sent).to.include('ZMON');
                 expect(sent).to.include('VSSCH ?');
-                expect(await val('zoneMain.powerZone')).to.equal(true);
-            }).timeout(10_000);
+                expect(await val('main.power')).to.equal(true);
+            }).timeout(15_000);
 
             it('sends user commands with protocol formatting', async () => {
                 const before = avr.received.length;
-                await harness.states.setStateAsync('denon.0.zoneMain.volume', 40.3);
-                await harness.states.setStateAsync('denon.0.zoneMain.sleepTimer', 5);
-                await harness.states.setStateAsync('denon.0.settings.videoProcessingMode', 'Movie');
+                await harness.states.setStateAsync('denon.0.main.volume', 40.3);
+                await harness.states.setStateAsync('denon.0.main.sleepTimer', 5);
+                await harness.states.setStateAsync('denon.0.main.video.processingMode', 'Movie');
                 await harness.states.setStateAsync('denon.0.display.brightness', 'BRI');
+                await harness.states.setStateAsync('denon.0.main.audio.bass', -2);
                 await wait(1_500);
                 const sent = avr.received.slice(before);
                 expect(sent).to.include('MV405');
                 expect(sent).to.include('SLP005');
                 expect(sent).to.include('VSVPMMOVI');
                 expect(sent).to.include('DIM BRI');
+                expect(sent).to.include('PSBAS 48');
             }).timeout(10_000);
         });
     },

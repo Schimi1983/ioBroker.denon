@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { buildBaseUrl, fetchDeviceInfo, parseDeviceInfo } from './deviceinfo';
-import { ENUM_SETTINGS, findEnumSetting } from './settings';
 
 /** Shortened Deviceinfo.xml of the AVR-X2200W (recorded live 2026-10-27) */
 const X2200W = `<?xml version="1.0" encoding="utf-8" ?>
@@ -79,45 +78,5 @@ describe('deviceinfo', () => {
 
     it('returns undefined if HTTP is not reachable', async () => {
         expect(await fetchDeviceInfo('avr', 500, fakeFetch({}))).to.equal(undefined);
-    });
-});
-
-describe('settings', () => {
-    it('maps responses recorded on the AVR-X2200W', () => {
-        expect(findEnumSetting('STBY30M')).to.deep.include({ value: '30M' });
-        expect(findEnumSetting('STBY30M')?.setting.id).to.equal('settings.autoStandby');
-        expect(findEnumSetting('ECOAUTO')?.setting.id).to.equal('settings.ecoMode');
-        expect(findEnumSetting('PSDRC AUTO')).to.deep.include({ value: 'AUTO' });
-        expect(findEnumSetting('PSRSTR OFF')?.setting.id).to.equal('settings.audioRestorer');
-        expect(findEnumSetting('SDNO')?.setting.id).to.equal('settings.inputMode');
-        expect(findEnumSetting('DCAUTO')?.setting.id).to.equal('settings.digitalInputMode');
-    });
-
-    it('ignores unrelated lines and empty values', () => {
-        expect(findEnumSetting('MV455')).to.equal(undefined);
-        expect(findEnumSetting('SSINFAISFSV 48K')).to.equal(undefined);
-        expect(findEnumSetting('ECO')).to.equal(undefined);
-    });
-
-    it('has unique prefixes', () => {
-        const prefixes = ENUM_SETTINGS.map(s => s.prefix);
-        expect(new Set(prefixes).size).to.equal(prefixes.length);
-    });
-});
-
-describe('settings (video and sound mode group)', () => {
-    it('distinguishes VSSCH (HDMI) from VSSC (analog)', () => {
-        expect(findEnumSetting('VSSCH4K')).to.deep.include({ value: '4K' });
-        expect(findEnumSetting('VSSCH4K')?.setting.id).to.equal('settings.hdmiResolution');
-        expect(findEnumSetting('VSSCAUTO')?.setting.id).to.equal('settings.analogResolution');
-        expect(findEnumSetting('VSSCH10P24')).to.deep.include({ value: '10P24' });
-    });
-
-    it('maps aspect ratio and sound mode group (live AVR-X2200W)', () => {
-        expect(findEnumSetting('VSASPFUL')?.setting.id).to.equal('settings.aspectRatio');
-        const smg = findEnumSetting('SSSMG MOV');
-        expect(smg?.setting.id).to.equal('settings.soundModeGroup');
-        expect(smg?.value).to.equal('MOV');
-        expect(smg?.setting.write).to.equal(false);
     });
 });

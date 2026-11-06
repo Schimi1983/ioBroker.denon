@@ -84,47 +84,78 @@ Install the adapter via the ioBroker admin interface: open the tab "Adapters", s
   value list are added automatically.
 * **Denon and Marantz:** quick select uses `QUICK` on Denon and `SMART` on Marantz receivers. The adapter detects the brand
   and only sends the matching command.
-* **HEOS models:** receivers with HEOS (models from 2016) do not report the network display content and cover via telnet.
+* **HEOS models:** receivers with HEOS (models from 2016) do not report the network display content, cover and favorites via
+  telnet. These states and the playback buttons are not created there.
+* **Standby:** to get answers in standby and to switch the receiver on, set "Network Control" to "Always On" (see above).
 
 ## Upgrading from 1.x
 
-Version 2.0.0 changes the values reported in some states to the protocol codes. Scripts and visualizations which compare
-the **read** values have to be adapted:
+Version 2.0 comes with a new object tree: states are grouped by function (main zone, sound, video, remote control ...)
+and have new, consistent names. On the first start the adapter deletes the old channels `settings`, `zoneMain`, `zone2`,
+`zone3`, `display` and `tuner` and creates the new states as soon as the receiver answers.
 
-| State | Values up to 1.x | Values from 2.0.0 |
-|---|---|---|
-| `display.brightness` | `Off`, `Dark`, `Dimmed`, `Bright` | `OFF`, `DAR`, `DIM`, `BRI` |
-| `settings.videoProcessingMode` | `AUTO`, `GAME`, `MOVIE` (in fact reported as `MAUTO` etc.) | `AUTO`, `GAME`, `MOVI`, `BYP` |
-| `settings.pictureMode` | never filled | `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+**Before updating:**
 
-Writing still works with the old values: the label (e.g. `Bright`, `Movie`) as well as the list index of 1.x
-(e.g. `selectInput` = `'5'` for TV, `surroundMode` = `'3'` for MCH STEREO) are converted to the protocol code.
-Inputs, surround modes, MultEQ and dynamic volume keep their values; only the value lists now use the value as key.
-Existing objects are migrated automatically at the first start.
+* Scripts, Blockly, VIS widgets and aliases using states of this adapter have to be changed to the new names (table below).
+* Settings of the old states (e.g. history/SQL logging) are lost and have to be set again on the new states.
+* Read values are always the code of the receiver, e.g. `display.brightness` = `BRI` instead of `Bright`. Writing accepts the code or the label.
+
+Main changes (zone 2 and 3 the same with `zone2.` / `zone3.` instead of `main.`):
+
+| Up to 1.x | From 2.0 |
+|---|---|
+| `zoneMain.powerZone` | `main.power` |
+| `zoneMain.volume` / `zoneMain.volumeDB` | `main.volume` / `main.volumeDb` |
+| `zoneMain.volumeUp` / `zoneMain.volumeDown` | `main.volumeUp` / `main.volumeDown` |
+| `zoneMain.muteIndicator` | `main.mute` |
+| `zoneMain.selectInput` | `main.input` |
+| `zoneMain.quickSelect`, `zoneMain.sleepTimer` | `main.quickSelect`, `main.sleepTimer` |
+| `zoneMain.maximumVolume` / `zoneMain.maximumVolumeDB` | `main.maxVolume` / `main.maxVolumeDb` |
+| `zoneMain.equalizerBass` / `equalizerTreble` (+ `Up`/`Down`) | `main.audio.bass` / `main.audio.treble` (+ `Up`/`Down`) |
+| `zoneMain.channelVolumeFrontLeft` ... | `main.channelVolume.frontLeft` ... |
+| `zoneMain.iconURL` | `main.cover` |
+| `zoneMain.play`, `pause`, `playPause`, `skipPlus`, `skipMinus` | `remote.play`, `pause`, `playPause`, `next`, `previous` |
+| `settings.powerSystem` | `system.power` |
+| `settings.ecoMode`, `settings.speakerPreset` | `system.ecoMode`, `system.speakerPreset` |
+| `settings.surroundMode`, `settings.soundModeMovie` ... | `main.surroundMode`, `main.soundModeMovie` ... |
+| `settings.autoStandby` | `main.autoStandby` |
+| `settings.cursorUp` ... `settings.return`, `settings.setupMenu` | `remote.up` ... `remote.back`, `remote.menu` |
+| `settings.multEq`, `dynamicEq`, `dynamicVolume`, `referenceLevelOffset` | `main.audio.multEq`, `dynamicEq`, `dynamicVolume`, `referenceLevel` |
+| `settings.subwooferLevel`, `subwooferLevelState`, `subwooferTwoLevel` | `main.audio.subwooferLevel`, `subwooferLevelAdjust`, `subwoofer2Level` |
+| `settings.lfeAmount`, `audysseyLfc`, `containmentAmount` | `main.audio.lfe` (now 0 to -10 dB), `lfc`, `containment` |
+| `settings.dialogLevel`, `dialogLevelAdjust`, `dialogControl` | `main.audio.dialogLevel`, `dialogLevelAdjust`, `dialogControl` |
+| `settings.toneControl`, `centerSpread`, `dynamicCompression`, `audioRestorer`, `inputMode`, `digitalInputMode` | `main.audio.` + same name |
+| `settings.outputMonitor`, `videoProcessingMode`, `pictureMode`, `hdmiResolution`, `analogResolution`, `aspectRatio` | `main.video.monitor`, `processingMode`, `pictureMode`, `hdmiResolution`, `analogResolution`, `aspectRatio` |
+| `settings.soundModeGroup` | `info.soundModeGroup` |
+| `settings.loadPreset`, `savePreset`, `info.onlinePresets` | `netAudio.loadPreset`, `savePreset`, `presets` |
+| `display.displayContent0` ... | `display.line0` ... |
+| `info.friendlyName` | `info.name` |
+| `settings.expertCommand`, `expertReadingPattern`, `expertReadingResult` | `expert.command`, `readingPattern`, `readingResult` |
+
+List index values of 1.x (e.g. `selectInput` = `'5'` for TV) are not accepted anymore.
 
 ## States
 
-Values marked with *(on demand)* are only created if the receiver answers the related query.
+A state is only created once the receiver answers the related query, so every model only gets the states it supports.
+Buttons (role `button`) are created together with the value they belong to.
 
-### Channel: info
+### info – device and current signal (read only)
 
-| State | Type | R/W | Description |
-|---|---|---|---|
-| `info.connection` | boolean | R | `true` while the telnet connection is established |
-| `info.friendlyName` | string | R | Friendly name of the receiver |
-| `info.model` | string | R | Model, e.g. `AVR-X2200W` (HTTP identification) |
-| `info.brand` | string | R | `Denon` or `Marantz` (HTTP identification) |
-| `info.zones` | number | R | Number of zones incl. main zone (HTTP identification) |
-| `info.audioSignalCode` | string | R | *(on demand)* Code of the audio input signal, see table below |
-| `info.audioSampleRate` | string | R | *(on demand)* Sample rate of the audio input signal, e.g. `48K` |
-| `info.videoResolutionCode` | string | R | *(on demand)* Raw code of the video resolution (models up to about 2016) |
-| `info.videoInputResolution` / `info.videoOutputResolution` | string | R | *(on demand)* Resolution of the HDMI input / output, e.g. `1080p`, `1080p 24Hz`, `2160p 24/25Hz`, `2160p 50/60Hz`, `no signal` |
-| `info.firmware` / `info.firmwareDts` | string | R | *(on demand)* Firmware version of the receiver and of the DTS decoder |
-| `info.onlinePresets` | string | R | JSON array of the saved network audio favorites (id and channel) |
+| State | Description |
+|---|---|
+| `connection` | `true` while connected to the receiver |
+| `name` | device name as set in the receiver |
+| `model`, `brand`, `zones` | model (e.g. `AVR-X2200W`), brand (`Denon`/`Marantz`), number of zones incl. main zone |
+| `firmware`, `firmwareDts` | firmware version of the receiver and of the DTS decoder |
+| `audioSignal` | audio signal as text, e.g. `Dolby TrueHD / Atmos` |
+| `audioSignalCode`, `audioSampleRate` | code of the audio signal (table below) and sample rate, e.g. `48K` |
+| `videoInputResolution`, `videoOutputResolution` | resolution at the HDMI input and output, e.g. `1080p 24Hz`, `2160p 50/60Hz`, `no signal` |
+| `videoResolutionCode` | raw code of the video resolution (models up to about 2016) |
+| `soundModeGroup` | active sound mode group: `MOV` movie, `MUS` music, `GAM` game, `PUR` pure |
 
 Signal codes measured on an AVR-X2200W. The codes depend on the model generation, newer models may use other values:
 
-| `audioSignalCode` | Signal | | `videoResolutionCode` digit | Resolution |
+| `audioSignalCode` | Signal | | Digit `videoResolutionCode` | Resolution |
 |---|---|---|---|---|
 | `01` | standby / analog | | `0` | no signal |
 | `02` | PCM (stereo and multichannel) | | `2` | 480p/576p |
@@ -132,108 +163,119 @@ Signal codes measured on an AVR-X2200W. The codes depend on the model generation
 | `04` | Dolby Digital Plus | | `7` | 1080p 50/60 Hz |
 | `05` | Dolby TrueHD (also with Atmos) | | `8` | 1080p 24 Hz |
 | `06` | DTS | | `9` | 2160p 24/25 Hz |
-| `08` | DTS-HD High Resolution | | | |
-| `09` | DTS-HD Master Audio | | `A` | 2160p 50/60 Hz |
+| `08` | DTS-HD High Resolution | | `A` | 2160p 50/60 Hz |
+| `09` | DTS-HD Master Audio | | | |
 | `12` | switching, no signal yet | | | |
 
-The video code consists of `0`, the digit of the input and the digit of the output, e.g. `088` = 1080p 24 Hz in and out, `009` = no input (TV via ARC), 4K output.
-Other digits are reported as `unknown (n)` until they are verified.
+The video code consists of `0`, the digit of the input and the digit of the output, e.g. `088` = 1080p 24 Hz in and out.
 
-### Channel: zoneMain / zone2 / zone3
+### system – whole device
 
-Zone 2 and zone 3 are created once the receiver reports them. All states exist per zone unless noted otherwise.
+| State | Description |
+|---|---|
+| `power` | receiver on (`true`) or standby (`false`), all zones |
+| `ecoMode` | ECO mode: `ON`, `AUTO`, `OFF` |
+| `allZoneStereo` | All Zone Stereo: play the main zone in all zones |
+| `speakerPreset` | speaker preset 1 or 2 |
 
-| State | Type | R/W | Description |
-|---|---|---|---|
-| `powerZone` | boolean | R/W | Power of the zone |
-| `volume` | number | R/W | Volume 0 ... 98, 80 = 0 dB. Main zone in steps of 0.5, zone 2/3 in whole steps only (values are rounded) |
-| `volumeDB` | number | R/W | Volume in dB, -80 ... +18 |
-| `volumeUp` / `volumeDown` | button | W | Increase / decrease volume |
-| `maximumVolume` / `maximumVolumeDB` | number | R | Maximum volume (main zone only) |
-| `muteIndicator` | boolean | R/W | Mute |
-| `selectInput` | string | R/W | Input source, e.g. `TV`, `SAT/CBL`, `BD`, `GAME`, `MPLAY`, `NET`, `BT`, `TUNER`, `AUX1`. Zone 2/3: `SOURCE` = follows the input of the main zone. Inputs reported by the receiver are added to the value list. |
-| `quickSelect` | number | R/W | Quick select / smart select 1 ... 5, `0` = none active |
-| `sleepTimer` | number | R/W | Sleep timer in minutes 0 ... 120, `0` = off |
-| `equalizerBass` / `equalizerTreble` | number | R/W | Bass / treble -6 ... +6 dB (Dynamic EQ off and tone control on required) |
-| `equalizerBassUp` / `equalizerBassDown` / `equalizerTrebleUp` / `equalizerTrebleDown` | button | W | Step bass / treble |
-| `channelVolume<Speaker>` | number | R/W | Channel level -12 ... +12 dB per speaker, e.g. `channelVolumeFrontLeft`, `channelVolumeCenter`, `channelVolumeSubwooferTwo`. The main zone has all speakers of the protocol, zone 2/3 front left and right |
-| `playPause` / `play` / `pause` / `skipPlus` / `skipMinus` | button | W | Playback control for network, Bluetooth and USB sources (main zone only) |
-| `iconURL` | string | R | URL of the cover of the network source (main zone only, not for HEOS models) |
+### main – main zone (zone2, zone3 the same)
 
-```javascript
-setState('denon.0.zoneMain.volume', 45.5); // volume 45.5 (-34.5 dB)
-setState('denon.0.zoneMain.selectInput', 'TV'); // select input TV
-```
+| State | Description |
+|---|---|
+| `power` | zone on/off |
+| `volume` | volume 0 ... 98 (main zone in steps of 0.5, zone 2/3 in whole steps) |
+| `volumeDb` | the same volume in dB (-80 ... +18) |
+| `volumeUp`, `volumeDown` | buttons: volume up / down |
+| `mute` | mute |
+| `input` | input. The list shows the names of the receiver menu and only the inputs used there. The stored value is the code (e.g. `MPLAY`), which stays the same when an input is renamed. Zone 2/3 additionally `SOURCE` = same as main zone |
+| `quickSelect` | quick select (Marantz: smart select) 1 ... 5, newer models 1 ... 6, with the names of the receiver. `0` = none active |
+| `sleepTimer` | sleep timer in minutes, `0` = off |
+| `autoStandby` | auto standby (main zone 15/30/60 min, zone 2/3 2/4/8 h) |
+| `maxVolume`, `maxVolumeDb` | volume limit (main zone only, read only) |
+| `surroundMode` | surround mode, e.g. `STEREO`, `DOLBY SURROUND`. Unknown modes are added automatically |
+| `soundModeMovie`, `soundModeMusic`, `soundModeGame`, `soundModeDirect`, `soundModePureDirect`, `soundModeStereo`, `soundModeAuto` | buttons: select a sound mode group, the receiver picks the matching mode for the signal |
+| `cover` | URL of the cover of the current network source (not on HEOS models) |
+| `zone2.hdmiAudio` | HDMI audio in zone 2: `THR` pass through, `PCM` convert |
 
-### Channel: settings
+### main.audio – sound
 
-| State | Type | R/W | Description |
-|---|---|---|---|
-| `powerSystem` | boolean | R/W | System power (on / standby) |
-| `surroundMode` | string | R/W | Surround mode as reported by the receiver, e.g. `STEREO`, `DOLBY SURROUND`, `DTS HD+NEURAL:X`. New modes are added to the value list automatically |
-| `soundModeMovie` / `soundModeMusic` / `soundModeGame` / `soundModeDirect` / `soundModePureDirect` / `soundModeStereo` / `soundModeAuto` | button | W | Select a surround mode group; the receiver picks the best mode of the group for the current signal |
-| `soundModeGroup` | string | R | *(on demand)* Active surround mode group: `MOV` (movie), `MUS` (music), `GAM` (game), `PUR` (pure) |
-| `dynamicEq` | boolean | R/W | Audyssey Dynamic EQ |
-| `multEq` | string | R/W | MultEQ: `OFF`, `AUDYSSEY`, `BYP.LR`, `FLAT`, `MANUAL` |
-| `dynamicVolume` | string | R/W | Dynamic volume: `OFF`, `LIT`, `MED`, `HEV` |
-| `referenceLevelOffset` | string | R/W | Reference level offset: `0`, `5`, `10`, `15` dB |
-| `audysseyLfc` | boolean | R/W | *(on demand)* Audyssey Low Frequency Containment |
-| `containmentAmount` | number | R/W | *(on demand)* LFC amount 1 ... 7, buttons `containmentAmountUp` / `containmentAmountDown` |
-| `toneControl` | boolean | R/W | Tone control (only possible with Dynamic EQ off) |
-| `subwooferLevelState` | boolean | R/W | Enables the subwoofer level adjustment |
-| `subwooferLevel` / `subwooferTwoLevel` | number | R/W | Subwoofer level -12 ... +12 dB (`subwooferTwoLevel` on demand), buttons `subwooferLevelUp/Down`, `subwooferTwoLevelUp/Down` |
-| `lfeAmount` | number | R/W | LFE level 0 ... 10, 10 = -10 dB |
-| `centerSpread` | boolean | R/W | Center spread |
-| `dialogLevelAdjust` / `dialogLevel` | boolean / number | R/W | Dialog level adjustment for DTS content, -12 ... +12 dB |
-| `dialogControl` | number | R/W | DTS:X dialog control 0 ... 6 dB |
-| `dynamicCompression` | string | R/W | *(on demand)* Dynamic range compression: `AUTO`, `LOW`, `MID`, `HI`, `OFF` |
-| `audioRestorer` | string | R/W | *(on demand)* Audio restorer: `OFF`, `LOW`, `MED`, `HI` |
-| `ecoMode` | string | R/W | *(on demand)* ECO mode: `ON`, `AUTO`, `OFF` |
-| `autoStandby` | string | R/W | *(on demand)* Auto standby of the main zone: `15M`, `30M`, `60M`, `OFF` |
-| `inputMode` | string | R/W | *(on demand)* Audio input mode: `AUTO`, `HDMI`, `DIGITAL`, `ANALOG`, `EXT.IN`, `7.1IN`, `ARC`; `NO` = no input signal |
-| `digitalInputMode` | string | R/W | *(on demand)* Digital input mode: `AUTO`, `PCM`, `DTS` |
-| `outputMonitor` | number | R/W | *(on demand)* HDMI output for receivers with two outputs: `0` auto, `1`, `2` |
-| `videoProcessingMode` | string | R/W | *(on demand)* Video processing: `AUTO`, `GAME`, `MOVI`, `BYP` |
-| `hdmiResolution` / `analogResolution` | string | R/W | *(on demand)* Output resolution of the video conversion (HDMI / analog): `48P`, `10I`, `72P`, `10P`, `10P24`, `4K`, `4KF`, `AUTO` |
-| `aspectRatio` | string | R/W | *(on demand)* Aspect ratio: `NRM` (4:3), `FUL` (16:9) |
-| `pictureMode` | string | R/W | *(on demand)* Picture mode: `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
-| `speakerPreset` | number | R/W | *(on demand)* Speaker preset `1` or `2` |
-| `setupMenu` | boolean | R/W | Opens / closes the setup menu |
-| `cursorUp` / `cursorDown` / `cursorLeft` / `cursorRight` / `enter` / `return` / `option` / `info` | button | W | Remote control buttons for menu navigation |
-| `savePreset` / `loadPreset` | string | R/W | Saves the current network audio channel to / loads it from the given id of `info.onlinePresets`. These states are not acknowledged |
-| `expertCommand` | string | R/W | Sends any protocol command, e.g. `ECOON`. See [AVR-Control-Protocol.pdf](docs/AVR-Control-Protocol.pdf) |
-| `expertReadingPattern` | string | R/W | Regular expression (without leading/trailing `/`); matching lines received from the receiver are written to `expertReadingResult` |
-| `expertReadingResult` | string | R | Last received line which matches `expertReadingPattern` |
+| State | Description |
+|---|---|
+| `bass`, `treble` (+ `Up`/`Down`) | bass and treble in dB (-6 ... +6), only with tone control (`toneControl`) on. Also in zone 2/3 |
+| `toneControl` | tone control on/off |
+| `multEq`, `dynamicEq`, `dynamicVolume`, `referenceLevel` | Audyssey: MultEQ curve, Dynamic EQ, Dynamic Volume, reference level offset (0/5/10/15 dB) |
+| `lfc`, `containment` (+ `Up`/`Down`) | Audyssey LFC (bass limit for neighbours) and its amount 1 ... 7 |
+| `dynamicCompression` | dynamic range compression |
+| `subwoofer` | subwoofer on/off |
+| `subwooferLevelAdjust`, `subwooferLevel`, `subwoofer2Level` (+ `Up`/`Down`) | subwoofer level on/off and in dB |
+| `lfe` | LFE level (effects channel) 0 ... -10 dB |
+| `dialogLevelAdjust`, `dialogLevel`, `dialogControl` | dialog level on/off and in dB, dialog enhancement 0 ... 6 (DTS:X) |
+| `cinemaEq`, `neuralX`, `graphicEq`, `headphoneEq`, `loudness` | Cinema EQ, DTS Neural:X, graphic EQ, headphone EQ, loudness management |
+| `audioDelay` | audio delay (lip sync) 0 ... 300 ms |
+| `audioRestorer` | audio restorer for compressed music |
+| `centerSpread` | center spread |
+| `inputMode`, `digitalInputMode` | audio input mode (`AUTO`, `HDMI`, `DIGITAL`, `ANALOG` ...) and digital mode (`AUTO`, `PCM`, `DTS`) |
 
-Writing a value list state accepts the protocol code or the label, e.g. both `MOVI` and `Movie` for `videoProcessingMode`.
+### main.video – video and HDMI
 
-```javascript
-setState('denon.0.settings.surroundMode', 'MCH STEREO');
-setState('denon.0.settings.soundModeMovie', true); // best movie mode for the current signal
-setState('denon.0.settings.expertReadingPattern', '(MV.+)|(SSINFAISFSV.+)');
-setState('denon.0.settings.expertCommand', 'ECOON');
-```
+| State | Description |
+|---|---|
+| `monitor` | HDMI output: `AUTO`, `1`, `2` |
+| `hdmiResolution`, `analogResolution` | output resolution (scaler). Newer models only know `AUTO` and `OFF` |
+| `aspectRatio` | aspect ratio `NRM` (4:3) or `FUL` (16:9) |
+| `processingMode` | video processing `AUTO`, `GAME`, `MOVI`, `BYP` |
+| `pictureMode` | picture mode `OFF`, `STD`, `MOV`, `VVD`, `STM`, `CTM`, `DAY`, `NGT` |
+| `hdmiAudioOutput` | HDMI audio via `AMP` (receiver) or `TV` |
 
-### Channel: display
+### main.channelVolume – channel levels
 
-| State | Type | R/W | Description |
-|---|---|---|---|
-| `displayContent0` ... `displayContent8` | string | R | Content of the network menu / now playing display, line 0 is the title, line 8 the page indicator (not for HEOS models) |
-| `cursorLine` | number | R | *(on demand)* Line 1 ... 7 which carries the cursor |
-| `brightness` | string | R/W | Front display: `OFF`, `DAR` (dark), `DIM` (dimmed), `BRI` (bright) |
+Level of every speaker in dB (-12 ... +12), e.g. `frontLeft`, `center`, `subwoofer`. Only the channels set up in the
+receiver are created. Zone 2/3: `frontLeft` and `frontRight`.
 
-### Channel: tuner
+### remote – remote control
 
-| State | Type | R/W | Description |
-|---|---|---|---|
-| `frequency` | number | R/W | Tuner frequency, below 500 FM in MHz (e.g. `106.9`), above 500 AM in kHz |
-| `frequencyUp` / `frequencyDown` | button | W | Step the frequency |
-| `stationName` | string | R | RDS station name if available |
+| State | Description |
+|---|---|
+| `menu` | setup menu on the TV on/off |
+| `up`, `down`, `left`, `right`, `enter`, `back`, `option`, `info` | buttons to operate the menu |
+| `play`, `pause`, `playPause`, `next`, `previous` | playback of network sources (models without HEOS only) |
+
+### display – front display and network menu
+
+| State | Description |
+|---|---|
+| `brightness` | brightness: `BRI` bright, `DIM` dimmed, `DAR` dark, `OFF` off |
+| `line0` ... `line8` | content of the network menu or the playback screen, line 0 is the title (not on HEOS models) |
+| `cursorLine` | line 1 ... 7 with the cursor |
+
+### tuner
+
+| State | Description |
+|---|---|
+| `frequency` (+ `frequencyUp`/`Down`) | frequency, FM in MHz (e.g. `106.9`), AM in kHz |
+| `stationName` | RDS station name |
+| `band`, `tuningMode` | band `FM`/`AM`, tuning `AUTO`/`MANUAL` |
+| `preset` (+ `presetUp`/`Down`) | station preset |
+
+### netAudio – network favorites (models without HEOS)
+
+| State | Description |
+|---|---|
+| `presets` | stored favorites as JSON (`{"1":"Station"}`) |
+| `loadPreset`, `savePreset` | recall a favorite / store the current station (number) |
+
+### expert – raw commands
+
+| State | Description |
+|---|---|
+| `command` | send any protocol command, e.g. `PSDYNEQ ON` |
+| `readingPattern` | regular expression, e.g. `^PSDYNEQ` |
+| `readingResult` | last answer of the receiver matching the pattern |
 
 ## Multi zone amplifiers (DENON POA-3012CI)
 
-Multi zone amplifiers like the DENON POA-3012CI use a different protocol. The states `info.connection`, `settings.powerSystem`,
-`settings.expertCommand` and `display.brightness` are equal to the ones above. Additionally the following states are created
+Multi zone amplifiers like the DENON POA-3012CI use a different protocol. The states `info.connection`, `system.power`,
+`expert.*` and `display.brightness` are equal to the ones above. Additionally the following states are created
 for each zone 2 ... 12 (even numbers):
 
 | State | Type | R/W | Description |
@@ -245,8 +287,8 @@ for each zone 2 ... 12 (even numbers):
 | `zoneX.zoneTurnOnModeChange` | string | R/W | `0` constant, `1` trigger in, `2` audio signal, `3` off |
 | `zoneX.triggerInput` | boolean | R/W | Trigger input |
 | `zoneX.audioSignalInput` | boolean | R/W | Audio signal input |
-| `settings.powerConfigurationChange` | string | R/W | Power configuration |
-| `settings.masterTriggerInput` | boolean | R/W | Master trigger input |
+| `system.powerConfigurationChange` | string | R/W | Power configuration |
+| `system.masterTriggerInput` | boolean | R/W | Master trigger input |
 
 ## Missing functions & bugs
 
@@ -261,22 +303,18 @@ The adapter is tested with a DENON AVR-X1200W, a DENON AVR-X2200W and a Marantz 
 	### **WORK IN PROGRESS**
 -->
 ### **WORK IN PROGRESS**
-* (Schimi1983) **Breaking:** the read values of `display.brightness`, `settings.videoProcessingMode` and `settings.pictureMode` are protocol codes now (e.g. `BRI`, `MOVI`, `MOV`), see [Upgrading from 1.x](#upgrading-from-1x). Writing labels and the index values of 1.x still works
-* (Schimi1983) value lists of surround mode, inputs, MultEQ and dynamic volume use the reported value as key, unknown values reported by the receiver are added automatically (fixes #316, #330, #403)
+* (Schimi1983) **Breaking:** new object tree, all states renamed and grouped by function (`main`, `main.audio`, `main.video`, `system`, `remote` ...), old objects are removed on the first start, see [Upgrading from 1.x](#upgrading-from-1x)
+* (Schimi1983) **Breaking:** read values of value lists are the protocol codes of the receiver (e.g. `display.brightness` = `BRI`); writing accepts code or label (fixes #316, #330, #403)
+* (Schimi1983) input list with the names of the receiver menu and only the inputs used there, quick select names of the receiver
+* (Schimi1983) new states (only created if the receiver answers): Neural:X, Cinema EQ, graphic/headphone EQ, loudness management, subwoofer on/off, audio delay, All Zone Stereo, auto standby of zones 2/3, HDMI audio of zone 2, HDMI audio output, tuner band/tuning mode/preset, audio signal as text, ECO mode, dynamic compression, audio restorer, input modes, video resolution, signal info, firmware, model/brand/zones, sound mode group buttons (#271)
+* (Schimi1983) channel levels are only created for the speakers set up in the receiver; play buttons, display lines and presets only on models without HEOS
 * (Schimi1983) new telnet transport: line buffer (CR only), prioritized send queue with protocol pacing (>= 50 ms, 1 s after power on), keepalive and reconnect with backoff
-* (Schimi1983) fixed display lines (control characters, cursor line was cut), picture mode (#317), video processing mode, channel volumes SW2-SW4, CVEND, sleep timer formatting
+* (Schimi1983) fixed display lines, picture mode (#317), video processing mode, channel volumes SW2-SW4, sleep timer formatting
 * (Schimi1983) connection errors are logged once, a refused connection (telnet in use by another app) is reported as warning only after 30 s (#240)
-* (Schimi1983) queries of multi zone amplifiers (POA-3012CI) are only sent to such devices, the initial update of AV receivers is about twice as fast
-* (Schimi1983) brand (Denon/Marantz), model and number of zones are read once via HTTP (`Deviceinfo.xml`, port 80 or 8080, IPv6 supported); queries for missing zones and for the quick select variant of the other brand are skipped
-* (Schimi1983) new states: `settings.ecoMode`, `settings.autoStandby`, `settings.dynamicCompression`, `settings.audioRestorer`, `settings.inputMode`, `settings.digitalInputMode`, `info.audioSignalCode`, `info.audioSampleRate`, `info.videoResolutionCode`, `info.model`, `info.brand`, `info.zones`, `display.cursorLine`; they are only created if the receiver answers
-* (Schimi1983) new states `info.videoInputResolution`, `info.videoOutputResolution` (decoded from the resolution code), `info.firmware`, `info.firmwareDts`, `settings.soundModeGroup`, `settings.hdmiResolution`, `settings.analogResolution`, `settings.aspectRatio`
-* (Schimi1983) buttons are acknowledged after the command was sent
-* (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps because half steps are ignored by the receiver
-* (Schimi1983) settings are read again when the main zone is switched on
-* (Schimi1983) all states use roles of the official ioBroker role list (e.g. `quickSelect` and `volumeDB` are `level`, settings with value lists are `state`), menu buttons are write-only
-* (Schimi1983) video resolution digits `9` = 2160p 24/25 Hz and `A` = 2160p 50/60 Hz, audio code `08` = DTS-HD High Resolution (measured live)
-* (Schimi1983) no timers are started while the adapter is stopping (warning "setTimeout called, but adapter is shutting down")
-* (Schimi1983) new buttons for surround mode groups (`settings.soundModeMovie`, `Music`, `Game`, `Direct`, `PureDirect`, `Stereo`, `Auto`) (#271)
+* (Schimi1983) brand, model and number of zones are read once via HTTP (`Deviceinfo.xml`); queries for missing zones and for the quick select variant of the other brand are skipped, queries of POA multi zone amplifiers only go to such devices
+* (Schimi1983) zone 2/3: input `SOURCE` (follows main zone) is recognized, volumes are sent in whole steps
+* (Schimi1983) settings are read again when the main zone is switched on; buttons are acknowledged after the command was sent
+* (Schimi1983) all states use roles of the official ioBroker role list
 * (Schimi1983) admin UI migrated to jsonConfig, dependencies and tooling updated (Node.js >= 22, js-controller >= 6.0.11, admin >= 7.6.20)
 
 ### 1.15.12 (2024-07-23)

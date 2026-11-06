@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "denon",
-    "version": "2.0.0-alpha.7",
+    "version": "2.0.0-alpha.8",
     "news": {
+      "2.0.0-alpha.8": {
+        "en": "new object tree: all states renamed and grouped by function (see README); input and quick select names from the AVR, only used inputs; new: Neural:X, Cinema EQ, loudness, subwoofer on/off, audio delay, all zone stereo, zone auto standby, HDMI audio, tuner band/preset, audio signal as text",
+        "de": "neuer Objektbaum: alle Datenpunkte umbenannt und nach Funktion gruppiert (siehe README); Eingangs- und Quick-Select-Namen aus dem AVR, nur benutzte Eingänge; neu: Neural:X, Cinema EQ, Loudness, Subwoofer an/aus, Audio-Verzögerung, All Zone Stereo, Auto-Standby der Zonen, HDMI-Ton, Tuner-Band/Speicherplatz, Audiosignal als Klartext",
+        "ru": "новое дерево объектов: все состояния переименованы и сгруппированы по функциям (см. README); имена входов и Quick Select из ресивера, только используемые входы; новое: Neural:X, Cinema EQ, Loudness, сабвуфер вкл/выкл, задержка звука, All Zone Stereo, автоматический режим ожидания зон, HDMI-звук, диапазон/пресет тюнера, аудиосигнал текстом",
+        "pt": "nova árvore de objetos: todos os estados renomeados e agrupados por função (ver README); nomes de entradas e Quick Select do receiver, apenas entradas usadas; novo: Neural:X, Cinema EQ, loudness, subwoofer liga/desliga, atraso de áudio, All Zone Stereo, standby automático das zonas, áudio HDMI, banda/predefinição do sintonizador, sinal de áudio em texto",
+        "nl": "nieuwe objectboom: alle states hernoemd en gegroepeerd per functie (zie README); namen van ingangen en Quick Select uit de receiver, alleen gebruikte ingangen; nieuw: Neural:X, Cinema EQ, loudness, subwoofer aan/uit, audiovertraging, All Zone Stereo, automatische stand-by van zones, HDMI-audio, tunerband/voorkeuze, audiosignaal als tekst",
+        "fr": "nouvelle arborescence: tous les états renommés et regroupés par fonction (voir README); noms des entrées et Quick Select issus de l’ampli, seulement les entrées utilisées; nouveau: Neural:X, Cinema EQ, loudness, caisson marche/arrêt, délai audio, All Zone Stereo, veille automatique des zones, audio HDMI, bande/préréglage du tuner, signal audio en texte",
+        "it": "nuovo albero degli oggetti: tutti gli stati rinominati e raggruppati per funzione (vedi README); nomi di ingressi e Quick Select dal ricevitore, solo ingressi usati; nuovo: Neural:X, Cinema EQ, loudness, subwoofer on/off, ritardo audio, All Zone Stereo, standby automatico delle zone, audio HDMI, banda/preselezione del sintonizzatore, segnale audio come testo",
+        "es": "nuevo árbol de objetos: todos los estados renombrados y agrupados por función (ver README); nombres de entradas y Quick Select del receptor, solo entradas usadas; nuevo: Neural:X, Cinema EQ, loudness, subwoofer on/off, retardo de audio, All Zone Stereo, standby automático de zonas, audio HDMI, banda/presintonía del sintonizador, señal de audio como texto",
+        "pl": "nowe drzewo obiektów: wszystkie stany przemianowane i pogrupowane według funkcji (zob. README); nazwy wejść i Quick Select z amplitunera, tylko używane wejścia; nowe: Neural:X, Cinema EQ, loudness, subwoofer wł./wył., opóźnienie dźwięku, All Zone Stereo, automatyczne czuwanie stref, dźwięk HDMI, pasmo/pamięć tunera, sygnał audio jako tekst",
+        "uk": "нове дерево об’єктів: усі стани перейменовано та згруповано за функціями (див. README); назви входів і Quick Select з ресивера, лише використовувані входи; нове: Neural:X, Cinema EQ, Loudness, сабвуфер увімк/вимк, затримка звуку, All Zone Stereo, автоматичний режим очікування зон, HDMI-звук, діапазон/пресет тюнера, аудіосигнал текстом",
+        "zh-cn": "新的对象树：所有状态重新命名并按功能分组（见 README）；输入和快速选择名称来自功放，仅显示使用中的输入；新增：Neural:X、Cinema EQ、响度、低音炮开关、音频延迟、全区立体声、分区自动待机、HDMI 音频、调谐器波段/预设、音频信号文本"
+      },
       "2.0.0-alpha.7": {
         "en": "all states use roles of the official ioBroker role list",
         "de": "alle Datenpunkte nutzen Rollen aus der offiziellen ioBroker-Rollenliste",
@@ -205,7 +218,7 @@
       "_id": "info",
       "type": "channel",
       "common": {
-        "name": "Information"
+        "name": "Device and current signal"
       },
       "native": {}
     },
@@ -223,57 +236,19 @@
       "native": {}
     },
     {
-      "_id": "display",
+      "_id": "expert",
       "type": "channel",
       "common": {
-        "name": "Display Information"
+        "name": "Expert: raw protocol commands"
       },
       "native": {}
     },
     {
-      "_id": "display.brightness",
+      "_id": "expert.command",
       "type": "state",
       "common": {
-        "name": "Display brightness",
-        "role": "state",
-        "type": "string",
-        "write": true,
-        "read": true,
-        "states": {
-          "OFF": "Off",
-          "DAR": "Dark",
-          "DIM": "Dimmed",
-          "BRI": "Bright"
-        }
-      },
-      "native": {}
-    },
-    {
-      "_id": "settings",
-      "type": "channel",
-      "common": {
-        "name": "Settings and device commands"
-      },
-      "native": {}
-    },
-    {
-      "_id": "settings.powerSystem",
-      "type": "state",
-      "common": {
-        "name": "System Power State",
-        "role": "switch.power",
-        "type": "boolean",
-        "write": true,
-        "read": true
-      },
-      "native": {}
-    },
-    {
-      "_id": "settings.expertCommand",
-      "type": "state",
-      "common": {
-        "name": "Expert Command",
-        "role": "state",
+        "name": "Send raw command",
+        "role": "text",
         "type": "string",
         "write": true,
         "read": true
@@ -281,25 +256,25 @@
       "native": {}
     },
     {
-      "_id": "settings.expertReadingResult",
+      "_id": "expert.readingPattern",
       "type": "state",
       "common": {
-        "name": "Expert Reading Result",
+        "name": "Pattern (RegExp) for answers to show",
+        "role": "text",
+        "type": "string",
+        "write": true,
+        "read": true
+      },
+      "native": {}
+    },
+    {
+      "_id": "expert.readingResult",
+      "type": "state",
+      "common": {
+        "name": "Last answer matching the pattern",
         "role": "text",
         "type": "string",
         "write": false,
-        "read": true
-      },
-      "native": {}
-    },
-    {
-      "_id": "settings.expertReadingPattern",
-      "type": "state",
-      "common": {
-        "name": "Expert Reading Pattern",
-        "role": "text",
-        "type": "string",
-        "write": true,
         "read": true
       },
       "native": {}
