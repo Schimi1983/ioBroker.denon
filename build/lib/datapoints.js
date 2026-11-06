@@ -47,6 +47,10 @@ const DEFAULT_INPUTS = {
   "SAT/CBL": "CBL/SAT",
   MPLAY: "Media Player",
   GAME: "Game",
+  // @KI_HINWEIS: GAME1/GAME2/8K exist on models from 2020 (CY2026 protocol), the X2200W uses GAME
+  GAME1: "Game 1",
+  GAME2: "Game 2",
+  "8K": "8K",
   NET: "HEOS Music / Network",
   SPOTIFY: "Spotify",
   IRADIO: "Internet Radio",
